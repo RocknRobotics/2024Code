@@ -34,6 +34,14 @@ public class Robot extends TimedRobot {
 
   //Self-explanatory
   private SwerveMaster mySwerveMaster;
+
+  private HookMaster myHookMaster;
+  private ArmMaster myArmMaster;
+
+  private PS4Controller armController;
+
+  public static double fireFactor;
+  public static double angleFactor;
   
   @Override
   public void robotInit() {
@@ -57,6 +65,13 @@ public class Robot extends TimedRobot {
 
     //Reset accelerometer on startup
     mySwerveMaster.resetAccelerometer();
+
+    myHookMaster = new HookMaster();
+    myArmMaster = new ArmMaster();
+
+    armController = new PS4Controller(Constants.armControllerPort);
+    fireFactor = 0.25;
+    angleFactor = 0.25;
   }
 
   //Every 20ms
@@ -78,33 +93,44 @@ public class Robot extends TimedRobot {
 
     if(driveController.getTouchpadPressed()) {
       driveControllerFactor = 0d;
-    } else if(driveController.getSquareButtonPressed()) {
-      driveControllerFactor = 0.25d;
-    } else if(driveController.getCrossButtonPressed()) {
-      driveControllerFactor = 0.5d;
-    } else if(driveController.getCircleButtonPressed()) {
-      driveControllerFactor = 0.75d;
-    } else if(driveController.getTriangleButtonPressed()) {
-      driveControllerFactor = 1.0d;
+    } else if(driveController.getL2ButtonPressed()) {
+      driveControllerFactor = Math.min(1, driveControllerFactor + 0.25);
+    } else if(driveController.getL1ButtonPressed()) {
+      driveControllerFactor = Math.max(0, driveControllerFactor - 0.25);
     }
 
     if(driveController.getPSButtonPressed()) {
       turnFactor = 0d;
-    } else if(driveController.getPOV() == 270) {
-      turnFactor = 0.25d;
-    } else if(driveController.getPOV() == 180) {
-      turnFactor = 0.5d;
-    } else if(driveController.getPOV() == 90) {
-      turnFactor = 0.75d;
-    } else if(driveController.getPOV() == 0) {
-      turnFactor = 1.0d;
+    } else if(driveController.getR2ButtonPressed()) {
+      turnFactor = Math.min(1, turnFactor + 0.25);
+    } else if(driveController.getR1ButtonPressed()) {
+      turnFactor = Math.max(0, turnFactor - 0.25);
+    }
+
+    if(armController.getTouchpadPressed()) {
+      angleFactor = 0d;
+    } else if(armController.getL2ButtonPressed()) {
+      angleFactor = Math.min(1, angleFactor + 0.25);
+    } else if(armController.getL1ButtonPressed()) {
+      angleFactor = Math.max(0, angleFactor - 0.25);
+    }
+
+    if(armController.getPSButtonPressed()) {
+      fireFactor = 0d;
+    } else if(armController.getR2ButtonPressed()) {
+      fireFactor = Math.min(1, fireFactor + 0.25);
+    } else if(armController.getR1ButtonPressed()) {
+      fireFactor = Math.max(0, fireFactor - 0.25);
     }
 
     //Accelerometer will need to be reset due to inaccuracies accumulating
     //Odometry - Resets the origin and angle to the current position and angle of the robot
-    if (driveController.getOptionsButtonPressed()) {
+    if (driveController.getShareButtonPressed()) {
       mySwerveMaster.resetOrigin();
     }
+
+    myHookMaster.update(armController.getShareButtonPressed());
+    myArmMaster.update(armController, mySwerveMaster.getRobotPosition()[0], mySwerveMaster.getRobotPosition()[1]);
 
     //Controller Smart Dashboard values
     SmartDashboard.putNumber("Drive Factor: ", driveControllerFactor);

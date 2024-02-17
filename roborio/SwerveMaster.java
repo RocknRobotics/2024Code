@@ -1,5 +1,6 @@
 package frc.robot;
 
+import frc.robot.Constants.gameConstants;
 import frc.robot.Constants.motorConstants.*;
 
 import com.kauailabs.navx.frc.AHRS;
@@ -8,6 +9,7 @@ import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.wpilibj.I2C.Port;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.PS4Controller;
 
 //import edu.wpi.first.math.kinematics.ChassisSpeeds;
@@ -56,6 +58,8 @@ public class SwerveMaster {
 
     //PathPlanner - True if path planner is controlling robot, cancels controller
     boolean pathing = false;
+
+    boolean blue;
 
     //Constructor
     public SwerveMaster() {
@@ -114,6 +118,8 @@ public class SwerveMaster {
         ChassisSpeedsSubscriber = jetsonClient.getDoubleArrayTopic("/roborio/swervemaster/setChassisSpeeds").subscribe(new double[]{0, 0, 0}, null);
         ChassisSpeedsBooleanSubscriber = jetsonClient.getBooleanTopic("/roborio/swervemaster/setChassisSpeedsBoolean").subscribe(false, null);
         */
+
+        blue = DriverStation.getAlliance().get() == DriverStation.Alliance.Blue;
     }
 
     //Method called every 20ms 
@@ -128,6 +134,48 @@ public class SwerveMaster {
         double[] inputs = new double[]{Math.abs(controller.getLeftX()) < Constants.driveControllerStopBelowThis ? 0.0 : controller.getLeftX(), 
             Math.abs(controller.getLeftY()) < Constants.driveControllerStopBelowThis ? 0.0 : controller.getLeftY(), 
             Math.abs(controller.getRightX()) < Constants.driveControllerStopBelowThis ? 0.0 : controller.getRightX()};
+
+        if(controller.getSquareButton()) {
+            //Turn to prep for shooting into speaker
+            double relativeX = gameConstants.speakerX - robotPosition[0];
+            double relativeY = (blue ? gameConstants.blueConstants.speakerY : gameConstants.redConstants.speakerY) - robotPosition[1];
+            double desiredAngle = (Math.atan2(relativeY, relativeX) + 3 * Math.PI / 2) % (Math.PI * 2);
+            double desiredTurnInput = turnPIDController.calculate(desiredAngle, getReducedAngle()) / 180d;
+
+            inputs[2] = desiredTurnInput;
+        } else if(controller.getCrossButton()) {
+            //Turn to prep for shooting into amp
+            double relativeX = gameConstants.ampX - robotPosition[0];
+            double relativeY = (blue ? gameConstants.blueConstants.ampY : gameConstants.redConstants.ampY) - robotPosition[1];
+            double desiredAngle = (Math.atan2(relativeY, relativeX) + 3 * Math.PI / 2) % (Math.PI * 2);
+            double desiredTurnInput = turnPIDController.calculate(desiredAngle, getReducedAngle()) / 180d;
+
+            inputs[2] = desiredTurnInput;
+        } else if(controller.getCircleButton()) {
+            //Turn to prep for shooting into trap1
+            double relativeX = gameConstants.trapX1 - robotPosition[0];
+            double relativeY = (blue ? gameConstants.blueConstants.trapY1 : gameConstants.redConstants.trapY1) - robotPosition[1];
+            double desiredAngle = (Math.atan2(relativeY, relativeX) + 3 * Math.PI / 2) % (Math.PI * 2);
+            double desiredTurnInput = turnPIDController.calculate(desiredAngle, getReducedAngle()) / 180d;
+
+            inputs[2] = desiredTurnInput;
+        } else if(controller.getTriangleButton()) {
+            //Turn to prep for shooting into trap2
+            double relativeX = gameConstants.trapX2 - robotPosition[0];
+            double relativeY = (blue ? gameConstants.blueConstants.trapY2 : gameConstants.redConstants.trapY2) - robotPosition[1];
+            double desiredAngle = (Math.atan2(relativeY, relativeX) + 3 * Math.PI / 2) % (Math.PI * 2);
+            double desiredTurnInput = turnPIDController.calculate(desiredAngle, getReducedAngle()) / 180d;
+
+            inputs[2] = desiredTurnInput;
+        } else if(controller.getOptionsButton()) {
+            //Turn to prep for shooting into trap3
+            double relativeX = gameConstants.trapX3 - robotPosition[0];
+            double relativeY = (blue ? gameConstants.blueConstants.trapY3 : gameConstants.redConstants.trapY3) - robotPosition[1];
+            double desiredAngle = (Math.atan2(relativeY, relativeX) + 3 * Math.PI / 2) % (Math.PI * 2);
+            double desiredTurnInput = turnPIDController.calculate(desiredAngle, getReducedAngle()) / 180d;
+
+            inputs[2] = desiredTurnInput;
+        }
         
         //Apply drive factor
         inputs[0] *= driveFactor;

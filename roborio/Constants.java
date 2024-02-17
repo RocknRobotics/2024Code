@@ -15,9 +15,11 @@ public final class Constants {
 
     //The port the drive controller is connected to
     public static final int driveControllerPort = 0;
+    public static final int armControllerPort = 1;
 
     //The value of the driveController below which we will treat it as a zero instead
     public static final double driveControllerStopBelowThis = 0.15;
+    public static final double armControllerStopBelowThis = 0.15;
 
     //Starting positions of the drive modules relative to the center of the robot in meters as [x, y]
     public static final double[] leftUpStartPos = new double[]{-0.3425d, 0.3425d};
@@ -105,9 +107,87 @@ public final class Constants {
         }
     }
 
-    public static class OperatorConstants {
+    public static final class OperatorConstants {
       public static final int kDriverControllerPort = 0;
       public static final int kArmControllerPort = 1;
+    }
+
+    public static final class armConstants {
+        public static final class IDs {
+            //Right intake is bottom intake
+            //Left intake is top intake
+            /*
+            Right Intake   9
+            Ground Roller   10
+            Back Launcher   11
+            Front Launcher   12
+            Left Intake   13
+            Launcher Angle   16
+            Front Middle Roller   15
+            Back Middle Roller   16
+            Right Hook 17
+            Left Hook 18
+            */
+
+            public static final int groundRoller = 10;
+            public static final int bottomIntake = 9;
+            public static final int topIntake = 13;
+            public static final int backMiddleRoller = 16;
+            public static final int frontMiddleRoller = 15;
+            public static final int backLauncher = 11;
+            public static final int frontLauncher = 12;
+            public static final int launcherAngle = 14;
+
+            public static final int angleEncoder = 0;
+        }
+
+        //Range from -1 to 1
+        //speed < 0 should represent the bottom row spinning such that the note travels away from the launcher
+        //speed > 0 should represent the bottom row spinning such that the not travels closer to the launcher
+        public static final double intakeIntakeSpeed = 0.25;
+        public static final double middleIntakeSpeed = 0.25;
+        public static final double launcherIntakeSpeed = -0.5;
+
+        //We want the returned angle to be 90 degrees when straight up
+        //This should be in degrees ie after the conversion factor is applied
+        public static final double angleEncoderOffset = 0.0;
+        //360 degrees per one rotation of the absolute encoder?
+        public static final double angleConversionFactor = 360d;
+
+        public static final double launcherPrepTolerance = 0.05;
+        public static final double angleTolerance = 0.5;
+    }
+
+    public static final class hookConstants {
+        public static final int leftHookID = 18;
+        public static final int rightHookID = 17;
+
+        //The number of autonomous periods it takes for the hooks to reach full extension from the very bottom
+        public static final int countsTillTop = 10;
+    }
+
+    public static final class gameConstants {
+        //assumes southwest corner from blue alliance pov is (0, 0), with moving north +y and moving east +x
+        public static final double speakerX = 2.663;
+        public static final double ampX = 0.0;
+        public static final double trapX1 = 4.093;
+        public static final double trapX2 = 3.740;
+        public static final double trapX3 = 4.445;
+
+        public static final class blueConstants {
+            public static final double speakerY = 0.0;
+            public static final double ampY = 1.84;
+            public static final double trapY1 = 5.275;
+            public static final double trapY2 = 4.664;
+            public static final double trapY3 = 4.664;
+        }
+        public static final class redConstants {
+            public static final double speakerY = 16.541;
+            public static final double ampY = 14.701;
+            public static final double trapY1 = 11.266;
+            public static final double trapY2 = 11.877;
+            public static final double trapY3 = 11.877;
+        }
     }
 }
 
