@@ -174,12 +174,24 @@ public final class Constants {
         public static final double trapX2 = 3.740;
         public static final double trapX3 = 4.445;
 
+        public static final double minAmpAngle = 0.0;
+        public static final double maxAmpAngle = 360.0;
+
         public static final class blueConstants {
             public static final double speakerY = 0.0;
             public static final double ampY = 1.84;
             public static final double trapY1 = 5.275;
             public static final double trapY2 = 4.664;
             public static final double trapY3 = 4.664;
+
+            public static final double minSpeakerAngle = 0.0;
+            public static final double maxSpeakerAngle = 360.0;
+            public static final double minTrap1Angle = 0.0;
+            public static final double maxTrap1Angle = 360.0;
+            public static final double minTrap2Angle = 0.0;
+            public static final double maxTrap2Angle = 360.0;
+            public static final double minTrap3Angle = 0.0;
+            public static final double maxTrap3Angle = 360.0;
         }
         public static final class redConstants {
             public static final double speakerY = 16.541;
@@ -187,6 +199,15 @@ public final class Constants {
             public static final double trapY1 = 11.266;
             public static final double trapY2 = 11.877;
             public static final double trapY3 = 11.877;
+
+            public static final double minSpeakerAngle = 0.0;
+            public static final double maxSpeakerAngle = 360.0;
+            public static final double minTrap1Angle = 0.0;
+            public static final double maxTrap1Angle = 360.0;
+            public static final double minTrap2Angle = 0.0;
+            public static final double maxTrap2Angle = 360.0;
+            public static final double minTrap3Angle = 0.0;
+            public static final double maxTrap3Angle = 360.0;
         }
     }
 }

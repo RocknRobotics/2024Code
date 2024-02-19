@@ -139,42 +139,79 @@ public class SwerveMaster {
             //Turn to prep for shooting into speaker
             double relativeX = gameConstants.speakerX - robotPosition[0];
             double relativeY = (blue ? gameConstants.blueConstants.speakerY : gameConstants.redConstants.speakerY) - robotPosition[1];
-            double desiredAngle = (Math.atan2(relativeY, relativeX) + 3 * Math.PI / 2) % (Math.PI * 2);
+            double desiredAngle = ((Math.atan2(relativeY, relativeX) + 3 * Math.PI / 2) % (Math.PI * 2)) * 180 / Math.PI;
+            desiredAngle = blue ? Math.max(Math.min(gameConstants.blueConstants.maxSpeakerAngle, desiredAngle), gameConstants.blueConstants.minSpeakerAngle) : Math.max(Math.min(gameConstants.redConstants.maxSpeakerAngle, desiredAngle), gameConstants.redConstants.minSpeakerAngle);
             double desiredTurnInput = turnPIDController.calculate(desiredAngle, getReducedAngle()) / 180d;
 
             inputs[2] = desiredTurnInput;
+
+            if(Math.abs(desiredTurnInput) < Constants.driveControllerStopBelowThis) {
+                SmartDashboard.putString("Heading Status: ", "HEADING READY");
+            } else {
+                SmartDashboard.putString("Heading Status: ", "NOT YET");
+            }
         } else if(controller.getCrossButton()) {
             //Turn to prep for shooting into amp
             double relativeX = gameConstants.ampX - robotPosition[0];
             double relativeY = (blue ? gameConstants.blueConstants.ampY : gameConstants.redConstants.ampY) - robotPosition[1];
-            double desiredAngle = (Math.atan2(relativeY, relativeX) + 3 * Math.PI / 2) % (Math.PI * 2);
+            double desiredAngle = ((Math.atan2(relativeY, relativeX) + 3 * Math.PI / 2) % (Math.PI * 2))  * 180 / Math.PI;
+            desiredAngle = Math.max(Math.min(gameConstants.maxAmpAngle, desiredAngle), gameConstants.minAmpAngle);
             double desiredTurnInput = turnPIDController.calculate(desiredAngle, getReducedAngle()) / 180d;
 
             inputs[2] = desiredTurnInput;
+
+            if(Math.abs(desiredTurnInput) < Constants.driveControllerStopBelowThis) {
+                SmartDashboard.putString("Heading Status: ", "HEADING READY");
+            } else {
+                SmartDashboard.putString("Heading Status: ", "NOT YET");
+            }
         } else if(controller.getCircleButton()) {
             //Turn to prep for shooting into trap1
             double relativeX = gameConstants.trapX1 - robotPosition[0];
             double relativeY = (blue ? gameConstants.blueConstants.trapY1 : gameConstants.redConstants.trapY1) - robotPosition[1];
-            double desiredAngle = (Math.atan2(relativeY, relativeX) + 3 * Math.PI / 2) % (Math.PI * 2);
+            double desiredAngle = ((Math.atan2(relativeY, relativeX) + 3 * Math.PI / 2) % (Math.PI * 2)) * 180 / Math.PI;
+            desiredAngle = blue ? Math.max(Math.min(gameConstants.blueConstants.maxTrap1Angle, desiredAngle), gameConstants.blueConstants.minTrap1Angle) : Math.max(Math.min(gameConstants.redConstants.maxTrap1Angle, desiredAngle), gameConstants.redConstants.minTrap1Angle);
             double desiredTurnInput = turnPIDController.calculate(desiredAngle, getReducedAngle()) / 180d;
 
             inputs[2] = desiredTurnInput;
+
+            if(Math.abs(desiredTurnInput) < Constants.driveControllerStopBelowThis) {
+                SmartDashboard.putString("Heading Status: ", "HEADING READY");
+            } else {
+                SmartDashboard.putString("Heading Status: ", "NOT YET");
+            }
         } else if(controller.getTriangleButton()) {
             //Turn to prep for shooting into trap2
             double relativeX = gameConstants.trapX2 - robotPosition[0];
             double relativeY = (blue ? gameConstants.blueConstants.trapY2 : gameConstants.redConstants.trapY2) - robotPosition[1];
-            double desiredAngle = (Math.atan2(relativeY, relativeX) + 3 * Math.PI / 2) % (Math.PI * 2);
+            double desiredAngle = ((Math.atan2(relativeY, relativeX) + 3 * Math.PI / 2) % (Math.PI * 2)) * 180 / Math.PI;
+            desiredAngle = blue ? Math.max(Math.min(gameConstants.blueConstants.maxTrap2Angle, desiredAngle), gameConstants.blueConstants.minTrap2Angle) : Math.max(Math.min(gameConstants.redConstants.maxTrap2Angle, desiredAngle), gameConstants.redConstants.minTrap2Angle);
             double desiredTurnInput = turnPIDController.calculate(desiredAngle, getReducedAngle()) / 180d;
 
             inputs[2] = desiredTurnInput;
+
+            if(Math.abs(desiredTurnInput) < Constants.driveControllerStopBelowThis) {
+                SmartDashboard.putString("Heading Status: ", "HEADING READY");
+            } else {
+                SmartDashboard.putString("Heading Status: ", "NOT YET");
+            }
         } else if(controller.getOptionsButton()) {
             //Turn to prep for shooting into trap3
             double relativeX = gameConstants.trapX3 - robotPosition[0];
             double relativeY = (blue ? gameConstants.blueConstants.trapY3 : gameConstants.redConstants.trapY3) - robotPosition[1];
-            double desiredAngle = (Math.atan2(relativeY, relativeX) + 3 * Math.PI / 2) % (Math.PI * 2);
+            double desiredAngle = ((Math.atan2(relativeY, relativeX) + 3 * Math.PI / 2) % (Math.PI * 2)) * 180 / Math.PI;
+            desiredAngle = blue ? Math.max(Math.min(gameConstants.blueConstants.maxTrap3Angle, desiredAngle), gameConstants.blueConstants.minTrap3Angle) : Math.max(Math.min(gameConstants.redConstants.maxTrap3Angle, desiredAngle), gameConstants.redConstants.minTrap3Angle);
             double desiredTurnInput = turnPIDController.calculate(desiredAngle, getReducedAngle()) / 180d;
 
             inputs[2] = desiredTurnInput;
+
+            if(Math.abs(desiredTurnInput) < Constants.driveControllerStopBelowThis) {
+                SmartDashboard.putString("Heading Status: ", "HEADING READY");
+            } else {
+                SmartDashboard.putString("Heading Status: ", "NOT YET");
+            }
+        } else {
+            SmartDashboard.putString("Heading Status: ", "NOT YET");
         }
         
         //Apply drive factor
