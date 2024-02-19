@@ -34,6 +34,10 @@ public class ArmMaster {
         SmartDashboard.putBoolean("Update Amp Info: ", false);
         SmartDashboard.putBoolean("Update Trap Info: ", false);
         SmartDashboard.putBoolean("Save New Info: ", false);
+
+        SmartDashboard.putString("Launcher Status: ", "NOT YET");
+        SmartDashboard.putString("Arm Angle Status: ", "NOT YET");
+        SmartDashboard.putString("Distance Range Status: ", "NOT YET");
     }
 
     public void intake() {
@@ -85,28 +89,67 @@ public class ArmMaster {
             //Prep arm for scoring into speaker
             LauncherInfo info = myLauncherInfoMaster.get(Math.sqrt(Math.pow(currX - gameConstants.speakerX, 2) + Math.pow(currY - (blue ? gameConstants.blueConstants.speakerY : gameConstants.redConstants.speakerY), 2)));
             prepLauncher(info.speeds[0]);
-            changeAngle(Math.abs(info.angles[0] - getAngle()) < armConstants.angleTolerance ? 0 : (info.angles[0] - getAngle()) / 45);
+
+            if(Math.abs(info.angles[0] - getAngle()) < armConstants.angleTolerance) {
+                SmartDashboard.putString("Arm Angle Status: ", "ARM ANGLE READY");
+                changeAngle(0);
+            } else {
+                SmartDashboard.putString("Arm Angle Status: ", "NOT YET");
+                changeAngle( (info.angles[0] - getAngle()) / 45);
+            }
         } else if(armController.getCrossButton()) {
             //Prep arm for scoring into amp
             LauncherInfo info = myLauncherInfoMaster.get(Math.sqrt(Math.pow(currX - gameConstants.ampX, 2) + Math.pow(currY - (blue ? gameConstants.blueConstants.ampY : gameConstants.redConstants.ampY), 2)));
             prepLauncher(info.speeds[1]);
-            changeAngle(Math.abs(info.angles[1] - getAngle()) < armConstants.angleTolerance ? 0 : (info.angles[1] - getAngle()) / 45);
+            
+            if(Math.abs(info.angles[1] - getAngle()) < armConstants.angleTolerance) {
+                SmartDashboard.putString("Arm Angle Status: ", "ARM ANGLE READY");
+                changeAngle(0);
+            } else {
+                SmartDashboard.putString("Arm Angle Status: ", "NOT YET");
+                changeAngle( (info.angles[1] - getAngle()) / 45);
+            }
         } else if(armController.getCircleButton()) {
             //Prep arm for scoring into trap1
             LauncherInfo info = myLauncherInfoMaster.get(Math.sqrt(Math.pow(currX - gameConstants.trapX1, 2) + Math.pow(currY - (blue ? gameConstants.blueConstants.trapY1 : gameConstants.redConstants.trapY1), 2)));
             prepLauncher(info.speeds[2]);
-            changeAngle(Math.abs(info.angles[2] - getAngle()) < armConstants.angleTolerance ? 0 : (info.angles[2] - getAngle()) / 45);
+
+            if(Math.abs(info.angles[2] - getAngle()) < armConstants.angleTolerance) {
+                SmartDashboard.putString("Arm Angle Status: ", "ARM ANGLE READY");
+                changeAngle(0);
+            } else {
+                SmartDashboard.putString("Arm Angle Status: ", "NOT YET");
+                changeAngle( (info.angles[2] - getAngle()) / 45);
+            }
         } else if(armController.getTriangleButton()) {
             //Prep arm for scoring into trap2
             LauncherInfo info = myLauncherInfoMaster.get(Math.sqrt(Math.pow(currX - gameConstants.trapX2, 2) + Math.pow(currY - (blue ? gameConstants.blueConstants.trapY2 : gameConstants.redConstants.trapY2), 2)));
             prepLauncher(info.speeds[2]);
-            changeAngle(Math.abs(info.angles[2] - getAngle()) < armConstants.angleTolerance ? 0 : (info.angles[2] - getAngle()) / 45);
+
+            if(Math.abs(info.angles[2] - getAngle()) < armConstants.angleTolerance) {
+                SmartDashboard.putString("Arm Angle Status: ", "ARM ANGLE READY");
+                changeAngle(0);
+            } else {
+                SmartDashboard.putString("Arm Angle Status: ", "NOT YET");
+                changeAngle( (info.angles[2] - getAngle()) / 45);
+            }
         } else if(armController.getOptionsButton()) {
             //Prep arm for scoring into trap3
             LauncherInfo info = myLauncherInfoMaster.get(Math.sqrt(Math.pow(currX - gameConstants.trapX3, 2) + Math.pow(currY - (blue ? gameConstants.blueConstants.trapY3 : gameConstants.redConstants.trapY3), 2)));
             prepLauncher(info.speeds[2]);
-            changeAngle(Math.abs(info.angles[2] - getAngle()) < armConstants.angleTolerance ? 0 : (info.angles[2] - getAngle()) / 45);
+            
+            if(Math.abs(info.angles[2] - getAngle()) < armConstants.angleTolerance) {
+                SmartDashboard.putString("Arm Angle Status: ", "ARM ANGLE READY");
+                changeAngle(0);
+            } else {
+                SmartDashboard.putString("Arm Angle Status: ", "NOT YET");
+                changeAngle( (info.angles[2] - getAngle()) / 45);
+            }
         } else {
+            SmartDashboard.putString("Launcher Status: ", "NOT YET");
+            SmartDashboard.putString("Arm Angle Status: ", "NOT YET");
+            SmartDashboard.putString("Distance Range Status: ", "NOT YET");
+            
             //Manual control
             double leftInput = Math.abs(armController.getLeftY()) < Constants.armControllerStopBelowThis ? 0 : armController.getLeftY() * Robot.angleFactor;
             double rightInput = Math.abs(armController.getRightY()) < Constants.armControllerStopBelowThis ? 0 : armController.getRightY() * Robot.fireFactor;

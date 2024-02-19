@@ -32,7 +32,7 @@ public class Launcher {
     }
 
     public void stopLauncher() {
-        SmartDashboard.putBoolean("LAUNCHER READY: ", false);
+        SmartDashboard.putString("Launcher Status: ", "NOT YET");
         backLauncher.set(0);
         frontLauncher.set(0);
     }
@@ -50,9 +50,9 @@ public class Launcher {
         boolean frontCorrect = Math.abs(frontLauncher.get() + speed) < armConstants.launcherPrepTolerance;
 
         if(backCorrect && frontCorrect && speed != 0) {
-            SmartDashboard.putBoolean("LAUNCHER READY: ", true);
+            SmartDashboard.putString("Launcher Status: ", "LAUNCHER READY");
         } else {
-            SmartDashboard.putBoolean("LAUNCHER READY: ", false);
+            SmartDashboard.putString("Launcher Status: ", "NOT YET");
         }
     }
 

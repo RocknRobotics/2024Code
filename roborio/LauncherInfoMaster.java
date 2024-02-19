@@ -48,17 +48,27 @@ public class LauncherInfoMaster {
     }
 
     public LauncherInfo get(double distance) {
+        if(launcherInfoList.get(0).distance > distance) {
+            SmartDashboard.putString("Distance Range Status: ", "NOT YET");
+            return launcherInfoList.get(0);
+        } else if(launcherInfoList.get(launcherInfoList.size() - 1).distance < distance) {
+            SmartDashboard.putString("Distance Range Status: ", "NOT YET");
+            return launcherInfoList.get(launcherInfoList.size() - 1);
+        }
+
         int bottomIndex = 0;
 
         for(int i = 0; i < launcherInfoList.size(); i++) {
-            if(launcherInfoList.get(i).distance <= distance) {
+            if(launcherInfoList.get(i).distance < distance) {
                 bottomIndex++;
             }
         }
 
         if(launcherInfoList.get(bottomIndex).distance == distance) {
+            SmartDashboard.putString("Distance Range Status: ", "DISTANCE RANGE READY");
             return launcherInfoList.get(bottomIndex);
         } else {
+            SmartDashboard.putString("Distance Range Status: ", "DISTANCE RANGE READY");
             return launcherInfoList.get(bottomIndex).interpolate(launcherInfoList.get(bottomIndex + 1), distance);
         }
     }

@@ -8,34 +8,28 @@ import frc.robot.Constants.hookConstants;
 public class HookMaster {
     public CANSparkMax leftHook;
     public CANSparkMax rightHook;
-    public int count;
+    public long startMillis; //BEWARE: Will not work in approximately 292471154.678 years (not accounting for leap years)
     public boolean extended;
-    public boolean countFulfilled;
+    public boolean timeFulfilled;
 
     public HookMaster() {
         leftHook = new CANSparkMax(hookConstants.leftHookID, MotorType.kBrushless);
         rightHook = new CANSparkMax(hookConstants.rightHookID, MotorType.kBrushless);
-        count = 0;
+        startMillis = System.currentTimeMillis();
         extended = false;
-        countFulfilled = false;
+        timeFulfilled = false;
     }
 
     //returns false while count < hookConstants.countsTillTop
-    public boolean extend() {
-        extended = true;
+    public void extend() {
         leftHook.set(1);
         rightHook.set(1);
-        count++;
-        return count == hookConstants.countsTillTop;
     }
 
     //returns false while count < hookConstants.countsTillTop
-    public boolean retract() {
-        extended = false;
+    public void retract() {
         leftHook.set(-1);
         rightHook.set(-1);
-        count++;
-        return count == hookConstants.countsTillTop;
     }
 
     public void stop() {
@@ -43,33 +37,23 @@ public class HookMaster {
         rightHook.set(0);
     }
 
-    public void resetCount() {
-        count = 0;
-    }
-
     public void update(boolean shareButtonPressed) {
         if(shareButtonPressed) {
-            resetCount();
+            startMillis = System.currentTimeMillis();
 
             if(extended) {
                 countFulfilled = retract();
+                extended = false;
             } else {
                 countFulfilled = extend();
+                extended = true;
             }
         }
 
-        if(extended) {
-            if(!countFulfilled) {
-                countFulfilled = extend();
-            } else {
-                stop();
-            }
-        } else {
-            if(!countFulfilled) {
-                countFulfilled = retract();
-            } else {
-                stop();
-            }
+        long duration = System.currentTimeMillis() - startMillis;
+
+        if(duration >= Constants.hookConstants.extendTimeMillis) {
+            stop();
         }
     }
 }

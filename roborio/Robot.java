@@ -72,6 +72,8 @@ public class Robot extends TimedRobot {
     armController = new PS4Controller(Constants.armControllerPort);
     fireFactor = 0.25;
     angleFactor = 0.25;
+
+    SmartDashboard.putString("Auto-Shoot Status: ", "DON'T FIRE YET");
   }
 
   //Every 20ms
@@ -93,34 +95,34 @@ public class Robot extends TimedRobot {
 
     if(driveController.getTouchpadPressed()) {
       driveControllerFactor = 0d;
-    } else if(driveController.getL2ButtonPressed()) {
-      driveControllerFactor = Math.min(1, driveControllerFactor + 0.25);
-    } else if(driveController.getL1ButtonPressed()) {
-      driveControllerFactor = Math.max(0, driveControllerFactor - 0.25);
+    } else if(driveController.getL2Button()) {
+      driveControllerFactor = Math.min(1, driveControllerFactor + 0.05);
+    } else if(driveController.getL1Button()) {
+      driveControllerFactor = Math.max(0.05, driveControllerFactor - 0.05);
     }
 
     if(driveController.getPSButtonPressed()) {
       turnFactor = 0d;
-    } else if(driveController.getR2ButtonPressed()) {
-      turnFactor = Math.min(1, turnFactor + 0.25);
-    } else if(driveController.getR1ButtonPressed()) {
-      turnFactor = Math.max(0, turnFactor - 0.25);
+    } else if(driveController.getR2Button()) {
+      turnFactor = Math.min(1, turnFactor + 0.05);
+    } else if(driveController.getR1Button()) {
+      turnFactor = Math.max(0.05, turnFactor - 0.05);
     }
 
     if(armController.getTouchpadPressed()) {
       angleFactor = 0d;
-    } else if(armController.getL2ButtonPressed()) {
-      angleFactor = Math.min(1, angleFactor + 0.25);
-    } else if(armController.getL1ButtonPressed()) {
-      angleFactor = Math.max(0, angleFactor - 0.25);
+    } else if(armController.getL2Button()) {
+      angleFactor = Math.min(1, angleFactor + 0.05);
+    } else if(armController.getL1Button()) {
+      angleFactor = Math.max(0.05, angleFactor - 0.05);
     }
 
     if(armController.getPSButtonPressed()) {
       fireFactor = 0d;
-    } else if(armController.getR2ButtonPressed()) {
-      fireFactor = Math.min(1, fireFactor + 0.25);
-    } else if(armController.getR1ButtonPressed()) {
-      fireFactor = Math.max(0, fireFactor - 0.25);
+    } else if(armController.getR2Button()) {
+      fireFactor = Math.min(1, fireFactor + 0.05);
+    } else if(armController.getR1Button()) {
+      fireFactor = Math.max(0.05, fireFactor - 0.05);
     }
 
     //Accelerometer will need to be reset due to inaccuracies accumulating
@@ -139,8 +141,23 @@ public class Robot extends TimedRobot {
     SmartDashboard.putNumber("DC Left Y: ", driveController.getLeftY());
     SmartDashboard.putNumber("DC Right X: ", driveController.getRightX());
 
+    SmartDashboard.putNumber("Angle Factor: ", angleFactor);
+    SmartDashboard.putNumber("Fire Factor: ", fireFactor);
+    SmartDashboard.putNumber("AC Left Y: ", driveController.getLeftY());    
+    SmartDashboard.putNumber("AC Right Y: ", driveController.getRightY());
+
     //Call main method for swerve drive
     mySwerveMaster.update(driveController, driveControllerFactor, turnFactor);
+
+    if(SmartDashboard.getString("Launcher Status: ", "NOT YET").equals("LAUNCHER READY") && 
+      SmartDashboard.getString("Heading Status: ", "NOT YET").equals("HEADING READY") && 
+      SmartDashboard.getString("Arm Angle Status: ", "NOT YET").equals("ARM ANGLE READY") && 
+      SmartDashboard.getString("Distance Range Status: ", "NOT YET").equals("DISTANCE RANGE READY") && 
+      SmartDashboard.getString("Angle Range Status: ", "NOT YET").equals("ANGLE RANGE READY")) {
+        SmartDashboard.putString("Auto-Shoot Status: ", "ALL SYSTEMS GO!!!");
+      } else {
+        SmartDashboard.putString("Auto-Shoot Status: ", "DON'T FIRE YET");
+      }
   }
 
   @Override
@@ -149,6 +166,8 @@ public class Robot extends TimedRobot {
 
     //Tell motors to stop
     mySwerveMaster.set(new double[]{0d, 0d, 0d, 0d}, new double[]{0d, 0d, 0d, 0d});
+    myHookMaster.stop();
+    myArmMaster.stop();
   }
 
   @Override

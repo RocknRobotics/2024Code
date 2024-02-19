@@ -162,8 +162,8 @@ public final class Constants {
         public static final int leftHookID = 18;
         public static final int rightHookID = 17;
 
-        //The number of autonomous periods it takes for the hooks to reach full extension from the very bottom
-        public static final int countsTillTop = 10;
+        //The length of time (in milliseconds) it takes for the hooks to fully extend
+        public static final long extendTimeMillis = 1000;
     }
 
     public static final class gameConstants {
