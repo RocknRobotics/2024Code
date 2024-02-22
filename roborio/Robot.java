@@ -42,7 +42,7 @@ public class Robot extends TimedRobot {
 
   public static double fireFactor;
   public static double angleFactor;
-  
+    
   @Override
   public void robotInit() {
     SmartDashboard.putString("Current mode: ", "robotInit");
@@ -91,44 +91,42 @@ public class Robot extends TimedRobot {
 
   @Override
   public void teleopPeriodic() {
-    SmartDashboard.putString("Mode: ", "teleopPeriodic");
-
     if(driveController.getTouchpadPressed()) {
       driveControllerFactor = 0d;
     } else if(driveController.getL2Button()) {
-      driveControllerFactor = Math.min(1, driveControllerFactor + 0.05);
+      driveControllerFactor = Math.min(1, driveControllerFactor + 0.025);
     } else if(driveController.getL1Button()) {
-      driveControllerFactor = Math.max(0.05, driveControllerFactor - 0.05);
+      driveControllerFactor = Math.max(0.1, driveControllerFactor - 0.025);
     }
 
     if(driveController.getPSButtonPressed()) {
       turnFactor = 0d;
     } else if(driveController.getR2Button()) {
-      turnFactor = Math.min(1, turnFactor + 0.05);
+      turnFactor = Math.min(1, turnFactor + 0.025);
     } else if(driveController.getR1Button()) {
-      turnFactor = Math.max(0.05, turnFactor - 0.05);
+      turnFactor = Math.max(0.1, turnFactor - 0.025);
     }
 
     if(armController.getTouchpadPressed()) {
       angleFactor = 0d;
     } else if(armController.getL2Button()) {
-      angleFactor = Math.min(1, angleFactor + 0.05);
+      angleFactor = Math.min(1, angleFactor + 0.025);
     } else if(armController.getL1Button()) {
-      angleFactor = Math.max(0.05, angleFactor - 0.05);
+      angleFactor = Math.max(0.1, angleFactor - 0.025);
     }
 
     if(armController.getPSButtonPressed()) {
       fireFactor = 0d;
     } else if(armController.getR2Button()) {
-      fireFactor = Math.min(1, fireFactor + 0.05);
+      fireFactor = Math.min(1, fireFactor + 0.025);
     } else if(armController.getR1Button()) {
-      fireFactor = Math.max(0.05, fireFactor - 0.05);
+      fireFactor = Math.max(0.1, fireFactor - 0.025);
     }
 
     //Accelerometer will need to be reset due to inaccuracies accumulating
     //Odometry - Resets the origin and angle to the current position and angle of the robot
     if (driveController.getShareButtonPressed()) {
-      mySwerveMaster.resetOrigin();
+      mySwerveMaster.resetPose(0, 0, 0);
     }
 
     myHookMaster.update(armController.getShareButtonPressed());

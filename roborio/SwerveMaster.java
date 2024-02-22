@@ -138,6 +138,11 @@ public class SwerveMaster {
             Math.abs(controller.getLeftY()) < Constants.driveControllerStopBelowThis ? 0.0 : controller.getLeftY(), 
             Math.abs(controller.getRightX()) < Constants.driveControllerStopBelowThis ? 0.0 : controller.getRightX()};
 
+        double[] wow = getVelocity();
+        SmartDashboard.putNumber("!Velocity: ", Math.sqrt(Math.pow(wow[0],2) + Math.pow(wow[1],2)));
+        SmartDashboard.putNumber("!VX: ", wow[0]);
+        SmartDashboard.putNumber("!VY: ", wow[1]);
+
         if(controller.getSquareButton()) {
             //Turn to prep for shooting into speaker
             double relativeX = gameConstants.speakerX - robotPosition[0];
@@ -484,11 +489,12 @@ public class SwerveMaster {
         //set(new double[]{0, 0, 0, 0}, new double[]{0, 0, 0, 0});
     }
 
-    //Odometry - Reset origin with new origin at center of robot
+    //Odometry - Reset origin with new robot position given x and y in meters
     //Also needs gyro to be reset
-    public void resetOrigin() {
-        resetRobotPosition(0, 0);
+    public void resetPose(double x, double y, double angleAdjustment) {
+        resetRobotPosition(x, y);
         resetAccelerometer();
+        accelerometer.setAngleAdjustment(angleAdjustment);
         leftUpModule.resetPosition(Constants.leftUpStartPos);
         leftDownModule.resetPosition(Constants.leftDownStartPos);
         rightUpModule.resetPosition(Constants.rightUpStartPos);
@@ -561,6 +567,11 @@ public class SwerveMaster {
         //Set new prev stuff
         prevPosition[0] = robotPosition[0];
         prevPosition[1] = robotPosition[1];
+        
+        SmartDashboard.putNumber("!DTIME: ", deltaTime);
+        SmartDashboard.putNumber("!CTIME: ", currTime);
+        SmartDashboard.putNumber("!PTIME: ", prevTimePos);
+        SmartDashboard.putNumber("!Change: ", currTime - prevTimePos);
         prevTimePos = currTime;
 
         //Return velocity
