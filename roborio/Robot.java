@@ -157,7 +157,7 @@ public class Robot extends TimedRobot {
     SmartDashboard.putString("Mode: ", "disabledInit");
 
     //Tell motors to stop
-    mySwerveMaster.set(new double[]{0d, 0d, 0d, 0d}, new double[]{0d, 0d, 0d, 0d});
+    mySwerveMaster.stop();;
     myHookMaster.stop();
     myArmMaster.stop();
   }

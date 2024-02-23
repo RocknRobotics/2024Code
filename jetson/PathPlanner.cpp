@@ -1,7 +1,3 @@
-#include <pathplanner/lib/auto/AutoBuilder.h>
-#include <pathplanner/lib/util/HolonomicPathFollowerConfig.h>
-#include <pathplanner/lib/util/PIDConstants.h>
-#include <pathplanner/lib/util/ReplanningConfig.h>
 #include <frc/geometry/Pose2d.h>
 #include <frc/geometry/Rotation2d.h>
 #include <frc/kinematics/ChassisSpeeds.h>
@@ -12,17 +8,28 @@
 #include <ntcore.h>
 #include <fmt/core.h>
 
-using namespace pathplanner;
+#include <math.h>
 
-class PathPlanner: public frc2::Subsystem {
+class PathPlanner {
   public:
     NT_Inst* jetsonServer = 0;
     NT_Subscriber* chassisSubscriber = 0;
     NT_Subscriber* poseSubscriber = 0;
-    NT_Publisher* resetPoseArrayPublisher = 0;
-    NT_Publisher* resetPoseBooleanPublisher = 0;
-    NT_Publisher* setChassisSpeedsArrayPublisher = 0;
+    NT_Subscriber* finalPosSubscriber = 0;
+    NT_Subscriber* finalVelSubscriber = 0;
+    NT_Publisher* pathVelocityXPublisher = 0;
+    NT_Publisher* pathVelocityYPublisher = 0;
+    NT_Publisher* pathVelocityOmegaPublisher = 0;
 
+    double pathVelocityX = 0;  
+    double pathVelocityY = 0;  
+    double pathVelocityOmega = 0;  
+
+    double poseArray[3] = {0};
+    double speedsArray[3] = {0};
+
+    double finalPos[3] = {0};
+    double finalVel[3] = {0};
 
     PathPlanner() {
       *jetsonServer = nt::CreateInstance();
@@ -30,80 +37,98 @@ class PathPlanner: public frc2::Subsystem {
       nt::StartServer(*jetsonServer, "networktables.json", "10.36.92.11", NT_DEFAULT_PORT3, NT_DEFAULT_PORT4);
       *chassisSubscriber = nt::Subscribe(NT_GetTopic(*jetsonServer, "/roborio/swervemaster/chassis", 30), NT_DOUBLE_ARRAY, "double_array");
       *poseSubscriber = nt::Subscribe(NT_GetTopic(*jetsonServer, "/roborio/swervemaster/pose", 27), NT_DOUBLE_ARRAY, "double_array");
-      *resetPoseArrayPublisher = nt::Publish(NT_GetTopic(*jetsonServer, "/roborio/swervemaster/resetPoseArray", 37), NT_DOUBLE_ARRAY, "double_array");
-      *resetPoseBooleanPublisher = nt::Publish(NT_GetTopic(*jetsonServer, "/roborio/swervemaster/resetPoseBoolean", 39), NT_BOOLEAN, "boolean");
-      *setChassisSpeedsArrayPublisher = nt::Publish(NT_GetTopic(*jetsonServer, "/roborio/swervemaster/setChassisSpeeds", 39), NT_DOUBLE_ARRAY, "double_array");
+      *finalPosSubscriber = nt::Subscribe(NT_GetTopic(*jetsonServer, "/roborio/swervemaster/finalPos", 31), NT_DOUBLE_ARRAY, "double_array");
+      *finalVelSubscriber = nt::Subscribe(NT_GetTopic(*jetsonServer, "/roborio/swervemaster/finalVel", 31), NT_DOUBLE_ARRAY, "double_array");
+      *pathVelocityXPublisher = nt::Publish(NT_GetTopic(*jetsonServer, "/roborio/swervemaster/pathVelocitiesX", 38), NT_DOUBLE, "double");
+      *pathVelocityYPublisher = nt::Publish(NT_GetTopic(*jetsonServer, "/roborio/swervemaster/pathVelocitiesY", 38), NT_DOUBLE, "double");
+      *pathVelocityOmegaPublisher = nt::Publish(NT_GetTopic(*jetsonServer, "/roborio/swervemaster/pathVelocitiesOmega", 42), NT_DOUBLE, "double");
     }
 
-    void startUp() {
-      // Configure the AutoBuilder last
-      AutoBuilder::configureHolonomic(
-        // Robot pose supplier
-        [this](){ return getPose2d(); },
-
-        // Method to reset odometry (will be called if your auto has a starting pose)
-        [this](frc::Pose2d pose){ resetPose2d(pose); },
-
-        // ChassisSpeeds supplier. MUST BE ROBOT RELATIVE
-        [this](){ return getChassisSpeeds(); }, 
-
-        // Method that will drive the robot given ROBOT RELATIVE ChassisSpeeds
-        [this](frc::ChassisSpeeds speeds){ setChassisSpeeds(speeds); },
-
-        //Inputs(Translation PID, Rotation PID, Max motor speed, Radius of robot, Default path replanning config)
-        HolonomicPathFollowerConfig(PIDConstants(5.0, 0.0, 0.0), PIDConstants(5.0, 0.0, 0.0), 1_mps, 0.969_m, ReplanningConfig()),
-        []() {
-          // Boolean supplier that controls when the path will be mirrored for the red alliance
-          // This will flip the path being followed to the red side of the field.
-          // THE ORIGIN WILL REMAIN ON THE BLUE SIDE
-          auto alliance = frc::DriverStation::GetAlliance();
-          if (alliance) {
-            return alliance.value() == frc::DriverStation::Alliance::kRed;
-          }
-          return false;
-        },
-        this // Reference to this subsystem to set requirements
-      );
-    }
-
-    //Get robot Pose2d from the network table
-    frc::Pose2d getPose2d() {
-      //Grab pose values from the network table
+    //Get starting position from the network table
+    void getStartPos() {
+        //Grab start position values from the network table
       std::vector<double> inputVector = nt::GetDoubleArray(*poseSubscriber, std::span<double>{});
       double poseVals;
       poseVals = inputVector.front();
       
-      //Create Pose2d using values
-      frc::Pose2d pose(units::unit_t<units::meters>{poseVals}, units::unit_t<units::meters>{*(&poseVals + 1)}, frc::Rotation2d(units::radian_t{*(&poseVals + 2)}));
+      //Create position array using values
+      double pose[] = {poseVals, *(&poseVals + 1), *(&poseVals + 2)};
 
-      //Return pose
-      return pose;
+      //Set start positions
+      poseArray[0] = pose[0];
+      poseArray[1] = pose[1];
+      poseArray[2] = pose[2];
     }
 
-    //Get Chassis Speeds from the network table
-    frc::ChassisSpeeds getChassisSpeeds() {
-      //Grab Chassis values from the network table
+    //Get starting speeds from the network table
+    void getStartVel() {
+      //Grab start velocity values from the network table
       std::vector<double> inputVector = nt::GetDoubleArray(*chassisSubscriber, std::span<double>{});
       double chassisVals;
       chassisVals = inputVector.front();
-      
-      //Create Pose2d using values
-      frc::ChassisSpeeds speeds;
-      speeds.vx = units::unit_t<units::compound_unit<units::meters, units::inverse<units::seconds>>>{chassisVals};
-      speeds.vy = units::unit_t<units::compound_unit<units::meters, units::inverse<units::seconds>>>{*(&chassisVals + 1)};
-      speeds.omega = units::unit_t<units::compound_unit<units::radians, units::inverse<units::seconds>>>{*(&chassisVals + 2)};
 
-      //Return speeds 
-      return speeds;
+      //Create velocites array using values
+      double speeds[] = {chassisVals, *(&chassisVals + 1), *(&chassisVals + 2)};
+
+      //Set start velocities 
+      speedsArray[0] = speeds[0];
+      speedsArray[1] = speeds[1];
+      speedsArray[2] = speeds[2];
     }
 
-    //Send pose to robot to set as new pose
-    void resetPose2d(frc::Pose2d pose) {
-      
+    //Publish path planning velocities
+    void publishSpeeds() {
+      nt::SetFloat(*pathVelocityXPublisher, pathVelocityX);
+      nt::SetFloat(*pathVelocityYPublisher, pathVelocityY);
+      nt::SetFloat(*pathVelocityOmegaPublisher, pathVelocityOmega);
     }
 
-    //Set the ROBOT RELATIVE Chassis Speeds for the path on the network table
-    void setChassisSpeeds(frc::ChassisSpeeds speeds) {
+    void getFinalPos() {
+      //Grab final position values from the network table
+      std::vector<double> inputVector = nt::GetDoubleArray(*finalPosSubscriber, std::span<double>{});
+      double posVals;
+      posVals = inputVector.front();
 
+      //Create position array using values
+      double position[] = {posVals, *(&posVals + 1), *(&posVals + 2)};
+
+      //Set final positions 
+      finalPos[0] = position[0];
+      finalPos[1] = position[1];
+      finalPos[2] = position[2];
+    }
+
+    void getFinalVel() {
+      //Grab final velocity values from the network table
+      std::vector<double> inputVector = nt::GetDoubleArray(*finalVelSubscriber, std::span<double>{});
+      double velVals;
+      velVals = inputVector.front();
+
+      //Create velocity array using values
+      double velocity[] = {velVals, *(&velVals + 1), *(&velVals + 2)};
+
+      //Set final velocities 
+      finalVel[0] = velocity[0];
+      finalVel[1] = velocity[1];
+      finalVel[2] = velocity[2];
+    }
+
+    //Given starting pose and chassis speeds, [initialX, initialY, angle] and [initialDeltaX, initialDeltaY, omega],
+    //  and ending pose and chassis speeds, [finalX, finalY, angle] and [finalDeltaX, finalDeltaY, omega],
+    //  calculate velocity x, y, and turn that the robot should follow
+
+    //TODO - Implement a path finding system to avoid given obstacles
+
+    //Parameters: (finalPos as [finalX in meters, finalY in meters, angle in degrees], finalVel as [finalDeltaX in m/s, finalDeltaY in m/s, omega as deg/s])
+    void calculateVelocities() {
+      //Grab start values
+      getStartPos();
+      getStartVel();
+
+      //Grab final values
+      getFinalPos();
+      getFinalVel();
+
+      publishSpeeds();
     }
 };

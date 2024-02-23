@@ -455,7 +455,7 @@ public class SwerveMaster {
             driveSets[i] = driveSetInvert * -desiredMagnitude[i];
             
             //Debugging purposes
-            SmartDashboard.putNumber("Trans Ang " + i + ": ", translationalAngles[i]);
+            /*SmartDashboard.putNumber("Trans Ang " + i + ": ", translationalAngles[i]);
             SmartDashboard.putNumber("Trans Mag " + i + ": ", translationalMagnitude[i]);
             SmartDashboard.putNumber("Rot Ang " + i + ": ", rotationalAngles[i]);
             SmartDashboard.putNumber("Rot Mag " + i + ": ", rotationalMagnitude[i]);
@@ -464,7 +464,7 @@ public class SwerveMaster {
             SmartDashboard.putNumber("Desired Ang " + i + ": ", desiredAngle[i]);
             SmartDashboard.putNumber("Desired Mag " + i + ": ", desiredMagnitude[i]);
             SmartDashboard.putNumber("Turn Set " + i + ": ", turnSets[i]);
-            SmartDashboard.putNumber("Drive Set " + i + ": ", driveSets[i]);
+            SmartDashboard.putNumber("Drive Set " + i + ": ", driveSets[i]);*/
         }
 
         //Odometry - Update the position of the robot using the angle the robot is facing
