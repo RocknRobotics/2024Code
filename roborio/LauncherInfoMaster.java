@@ -7,6 +7,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+
 public class LauncherInfoMaster {
     public List<String> launcherInfoStrings;
     public List<LauncherInfo> launcherInfoList;

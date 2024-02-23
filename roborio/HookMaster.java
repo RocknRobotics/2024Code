@@ -42,10 +42,10 @@ public class HookMaster {
             startMillis = System.currentTimeMillis();
 
             if(extended) {
-                countFulfilled = retract();
+                retract();
                 extended = false;
             } else {
-                countFulfilled = extend();
+                extend();
                 extended = true;
             }
         }
