@@ -1,5 +1,6 @@
 package frc.robot;
 
+import frc.robot.Constants.gameConstants;
 import frc.robot.Constants.motorConstants.*;
 
 import com.kauailabs.navx.frc.AHRS;
@@ -8,6 +9,7 @@ import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.wpilibj.I2C.Port;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.PS4Controller;
 
 //import edu.wpi.first.math.kinematics.ChassisSpeeds;
@@ -56,6 +58,8 @@ public class SwerveMaster {
 
     //PathPlanner - True if path planner is controlling robot, cancels controller
     boolean pathing = false;
+
+    boolean blue;
 
     //Constructor
     public SwerveMaster() {
@@ -114,6 +118,11 @@ public class SwerveMaster {
         ChassisSpeedsSubscriber = jetsonClient.getDoubleArrayTopic("/roborio/swervemaster/setChassisSpeeds").subscribe(new double[]{0, 0, 0}, null);
         ChassisSpeedsBooleanSubscriber = jetsonClient.getBooleanTopic("/roborio/swervemaster/setChassisSpeedsBoolean").subscribe(false, null);
         */
+
+        blue = DriverStation.getAlliance().get() == DriverStation.Alliance.Blue;
+
+        SmartDashboard.putString("Heading Status: ", "NOT YET");
+        SmartDashboard.putString("Angle Range Status: ", "NOT YET");
     }
 
     //Method called every 20ms 
@@ -128,6 +137,121 @@ public class SwerveMaster {
         double[] inputs = new double[]{Math.abs(controller.getLeftX()) < Constants.driveControllerStopBelowThis ? 0.0 : controller.getLeftX(), 
             Math.abs(controller.getLeftY()) < Constants.driveControllerStopBelowThis ? 0.0 : controller.getLeftY(), 
             Math.abs(controller.getRightX()) < Constants.driveControllerStopBelowThis ? 0.0 : controller.getRightX()};
+
+        double[] wow = getVelocity();
+        SmartDashboard.putNumber("!Velocity: ", Math.sqrt(Math.pow(wow[0],2) + Math.pow(wow[1],2)));
+        SmartDashboard.putNumber("!VX: ", wow[0]);
+        SmartDashboard.putNumber("!VY: ", wow[1]);
+
+        if(controller.getSquareButton()) {
+            //Turn to prep for shooting into speaker
+            double relativeX = gameConstants.speakerX - robotPosition[0];
+            double relativeY = (blue ? gameConstants.blueConstants.speakerY : gameConstants.redConstants.speakerY) - robotPosition[1];
+            double originalAngle = ((Math.atan2(relativeY, relativeX) + 3 * Math.PI / 2) % (Math.PI * 2)) * 180 / Math.PI;
+            double desiredAngle = blue ? Math.max(Math.min(gameConstants.blueConstants.maxSpeakerAngle, originalAngle), gameConstants.blueConstants.minSpeakerAngle) : Math.max(Math.min(gameConstants.redConstants.maxSpeakerAngle, originalAngle), gameConstants.redConstants.minSpeakerAngle);
+            double desiredTurnInput = turnPIDController.calculate(desiredAngle, getReducedAngle()) / 180d;
+
+            inputs[2] = desiredTurnInput;
+
+            if(Math.abs(desiredTurnInput) < Constants.driveControllerStopBelowThis) {
+                SmartDashboard.putString("Heading Status: ", "HEADING READY");
+            } else {
+                SmartDashboard.putString("Heading Status: ", "NOT YET");
+            }
+
+            if(desiredAngle == originalAngle) {
+                SmartDashboard.putString("Angle Range Status: ", "ANGLE RANGE READY");
+            } else {
+                SmartDashboard.putString("Angle Range Status: ", "NOT YET");
+            }
+        } else if(controller.getCrossButton()) {
+            //Turn to prep for shooting into amp
+            double relativeX = gameConstants.ampX - robotPosition[0];
+            double relativeY = (blue ? gameConstants.blueConstants.ampY : gameConstants.redConstants.ampY) - robotPosition[1];
+            double originalAngle = ((Math.atan2(relativeY, relativeX) + 3 * Math.PI / 2) % (Math.PI * 2))  * 180 / Math.PI;
+            double desiredAngle = Math.max(Math.min(gameConstants.maxAmpAngle, originalAngle), gameConstants.minAmpAngle);
+            double desiredTurnInput = turnPIDController.calculate(desiredAngle, getReducedAngle()) / 180d;
+
+            inputs[2] = desiredTurnInput;
+
+            if(Math.abs(desiredTurnInput) < Constants.driveControllerStopBelowThis) {
+                SmartDashboard.putString("Heading Status: ", "HEADING READY");
+            } else {
+                SmartDashboard.putString("Heading Status: ", "NOT YET");
+            }
+
+            if(desiredAngle == originalAngle) {
+                SmartDashboard.putString("Angle Range Status: ", "ANGLE RANGE READY");
+            } else {
+                SmartDashboard.putString("Angle Range Status: ", "NOT YET");
+            }
+        } else if(controller.getCircleButton()) {
+            //Turn to prep for shooting into trap1
+            double relativeX = gameConstants.trapX1 - robotPosition[0];
+            double relativeY = (blue ? gameConstants.blueConstants.trapY1 : gameConstants.redConstants.trapY1) - robotPosition[1];
+            double originalAngle = ((Math.atan2(relativeY, relativeX) + 3 * Math.PI / 2) % (Math.PI * 2)) * 180 / Math.PI;
+            double desiredAngle = blue ? Math.max(Math.min(gameConstants.blueConstants.maxTrap1Angle, originalAngle), gameConstants.blueConstants.minTrap1Angle) : Math.max(Math.min(gameConstants.redConstants.maxTrap1Angle, originalAngle), gameConstants.redConstants.minTrap1Angle);
+            double desiredTurnInput = turnPIDController.calculate(desiredAngle, getReducedAngle()) / 180d;
+
+            inputs[2] = desiredTurnInput;
+
+            if(Math.abs(desiredTurnInput) < Constants.driveControllerStopBelowThis) {
+                SmartDashboard.putString("Heading Status: ", "HEADING READY");
+            } else {
+                SmartDashboard.putString("Heading Status: ", "NOT YET");
+            }
+
+            if(desiredAngle == originalAngle) {
+                SmartDashboard.putString("Angle Range Status: ", "ANGLE RANGE READY");
+            } else {
+                SmartDashboard.putString("Angle Range Status: ", "NOT YET");
+            }
+        } else if(controller.getTriangleButton()) {
+            //Turn to prep for shooting into trap2
+            double relativeX = gameConstants.trapX2 - robotPosition[0];
+            double relativeY = (blue ? gameConstants.blueConstants.trapY2 : gameConstants.redConstants.trapY2) - robotPosition[1];
+            double originalAngle = ((Math.atan2(relativeY, relativeX) + 3 * Math.PI / 2) % (Math.PI * 2)) * 180 / Math.PI;
+            double desiredAngle = blue ? Math.max(Math.min(gameConstants.blueConstants.maxTrap2Angle, originalAngle), gameConstants.blueConstants.minTrap2Angle) : Math.max(Math.min(gameConstants.redConstants.maxTrap2Angle, originalAngle), gameConstants.redConstants.minTrap2Angle);
+            double desiredTurnInput = turnPIDController.calculate(desiredAngle, getReducedAngle()) / 180d;
+
+            inputs[2] = desiredTurnInput;
+
+            if(Math.abs(desiredTurnInput) < Constants.driveControllerStopBelowThis) {
+                SmartDashboard.putString("Heading Status: ", "HEADING READY");
+            } else {
+                SmartDashboard.putString("Heading Status: ", "NOT YET");
+            }
+
+            if(desiredAngle == originalAngle) {
+                SmartDashboard.putString("Angle Range Status: ", "ANGLE RANGE READY");
+            } else {
+                SmartDashboard.putString("Angle Range Status: ", "NOT YET");
+            }
+        } else if(controller.getOptionsButton()) {
+            //Turn to prep for shooting into trap3
+            double relativeX = gameConstants.trapX3 - robotPosition[0];
+            double relativeY = (blue ? gameConstants.blueConstants.trapY3 : gameConstants.redConstants.trapY3) - robotPosition[1];
+            double originalAngle = ((Math.atan2(relativeY, relativeX) + 3 * Math.PI / 2) % (Math.PI * 2)) * 180 / Math.PI;
+            double desiredAngle = blue ? Math.max(Math.min(gameConstants.blueConstants.maxTrap3Angle, originalAngle), gameConstants.blueConstants.minTrap3Angle) : Math.max(Math.min(gameConstants.redConstants.maxTrap3Angle, originalAngle), gameConstants.redConstants.minTrap3Angle);
+            double desiredTurnInput = turnPIDController.calculate(desiredAngle, getReducedAngle()) / 180d;
+
+            inputs[2] = desiredTurnInput;
+
+            if(Math.abs(desiredTurnInput) < Constants.driveControllerStopBelowThis) {
+                SmartDashboard.putString("Heading Status: ", "HEADING READY");
+            } else {
+                SmartDashboard.putString("Heading Status: ", "NOT YET");
+            }
+
+            if(desiredAngle == originalAngle) {
+                SmartDashboard.putString("Angle Range Status: ", "ANGLE RANGE READY");
+            } else {
+                SmartDashboard.putString("Angle Range Status: ", "NOT YET");
+            }
+        } else {
+            SmartDashboard.putString("Heading Status: ", "NOT YET");
+            SmartDashboard.putString("Angle Range Status: ", "NOT YET");
+        }
         
         //Apply drive factor
         inputs[0] *= driveFactor;
@@ -365,11 +489,12 @@ public class SwerveMaster {
         //set(new double[]{0, 0, 0, 0}, new double[]{0, 0, 0, 0});
     }
 
-    //Odometry - Reset origin with new origin at center of robot
+    //Odometry - Reset origin with new robot position given x and y in meters
     //Also needs gyro to be reset
-    public void resetOrigin() {
-        resetRobotPosition(0, 0);
+    public void resetPose(double x, double y, double angleAdjustment) {
+        resetRobotPosition(x, y);
         resetAccelerometer();
+        accelerometer.setAngleAdjustment(angleAdjustment);
         leftUpModule.resetPosition(Constants.leftUpStartPos);
         leftDownModule.resetPosition(Constants.leftDownStartPos);
         rightUpModule.resetPosition(Constants.rightUpStartPos);
@@ -442,6 +567,11 @@ public class SwerveMaster {
         //Set new prev stuff
         prevPosition[0] = robotPosition[0];
         prevPosition[1] = robotPosition[1];
+        
+        SmartDashboard.putNumber("!DTIME: ", deltaTime);
+        SmartDashboard.putNumber("!CTIME: ", currTime);
+        SmartDashboard.putNumber("!PTIME: ", prevTimePos);
+        SmartDashboard.putNumber("!Change: ", currTime - prevTimePos);
         prevTimePos = currTime;
 
         //Return velocity
