@@ -9,8 +9,6 @@ import com.revrobotics.CANSparkBase;
 import edu.wpi.first.wpilibj.PS4Controller;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
-import edu.wpi.first.wpilibj2.command.Command;
-import edu.wpi.first.wpilibj2.command.CommandScheduler;
 
 /**
  * The VM is configured to automatically run this class, and to call the functions corresponding to
@@ -19,10 +17,6 @@ import edu.wpi.first.wpilibj2.command.CommandScheduler;
  * project.
  */
 public class Robot extends TimedRobot {
-  private Command m_autonomousCommand;
-
-  private RobotContainer m_robotContainer;
-
   //The PS4Controller for driving
   private PS4Controller driveController;
 
@@ -34,20 +28,10 @@ public class Robot extends TimedRobot {
 
   //Self-explanatory
   private SwerveMaster mySwerveMaster;
-
-  private HookMaster myHookMaster;
-  private ArmMaster myArmMaster;
-
-  private PS4Controller armController;
-
-  public static double fireFactor;
-  public static double angleFactor;
-    
+  
   @Override
   public void robotInit() {
     SmartDashboard.putString("Current mode: ", "robotInit");
-
-    m_robotContainer = new RobotContainer();
 
     //Controller variables
     driveController = new PS4Controller(Constants.driveControllerPort);
@@ -65,15 +49,6 @@ public class Robot extends TimedRobot {
 
     //Reset accelerometer on startup
     mySwerveMaster.resetAccelerometer();
-
-    myHookMaster = new HookMaster();
-    myArmMaster = new ArmMaster();
-
-    armController = new PS4Controller(Constants.armControllerPort);
-    fireFactor = 0.25;
-    angleFactor = 0.25;
-
-    SmartDashboard.putString("Auto-Shoot Status: ", "DON'T FIRE YET");
   }
 
   //Every 20ms
@@ -91,46 +66,37 @@ public class Robot extends TimedRobot {
 
   @Override
   public void teleopPeriodic() {
+    SmartDashboard.putString("Mode: ", "teleopPeriodic");
+
     if(driveController.getTouchpadPressed()) {
       driveControllerFactor = 0d;
-    } else if(driveController.getL2Button()) {
-      driveControllerFactor = Math.min(1, driveControllerFactor + 0.025);
-    } else if(driveController.getL1Button()) {
-      driveControllerFactor = Math.max(0.1, driveControllerFactor - 0.025);
+    } else if(driveController.getSquareButtonPressed()) {
+      driveControllerFactor = 0.25d;
+    } else if(driveController.getCrossButtonPressed()) {
+      driveControllerFactor = 0.5d;
+    } else if(driveController.getCircleButtonPressed()) {
+      driveControllerFactor = 0.75d;
+    } else if(driveController.getTriangleButtonPressed()) {
+      driveControllerFactor = 1.0d;
     }
 
     if(driveController.getPSButtonPressed()) {
       turnFactor = 0d;
-    } else if(driveController.getR2Button()) {
-      turnFactor = Math.min(1, turnFactor + 0.025);
-    } else if(driveController.getR1Button()) {
-      turnFactor = Math.max(0.1, turnFactor - 0.025);
-    }
-
-    if(armController.getTouchpadPressed()) {
-      angleFactor = 0d;
-    } else if(armController.getL2Button()) {
-      angleFactor = Math.min(1, angleFactor + 0.025);
-    } else if(armController.getL1Button()) {
-      angleFactor = Math.max(0.1, angleFactor - 0.025);
-    }
-
-    if(armController.getPSButtonPressed()) {
-      fireFactor = 0d;
-    } else if(armController.getR2Button()) {
-      fireFactor = Math.min(1, fireFactor + 0.025);
-    } else if(armController.getR1Button()) {
-      fireFactor = Math.max(0.1, fireFactor - 0.025);
+    } else if(driveController.getPOV() == 270) {
+      turnFactor = 0.25d;
+    } else if(driveController.getPOV() == 180) {
+      turnFactor = 0.5d;
+    } else if(driveController.getPOV() == 90) {
+      turnFactor = 0.75d;
+    } else if(driveController.getPOV() == 0) {
+      turnFactor = 1.0d;
     }
 
     //Accelerometer will need to be reset due to inaccuracies accumulating
     //Odometry - Resets the origin and angle to the current position and angle of the robot
-    if (driveController.getShareButtonPressed()) {
-      mySwerveMaster.resetPose(0, 0, 0);
+    if (driveController.getOptionsButtonPressed()) {
+      mySwerveMaster.resetOrigin();
     }
-
-    myHookMaster.update(armController.getShareButtonPressed());
-    myArmMaster.update(armController, mySwerveMaster.getRobotPosition()[0], mySwerveMaster.getRobotPosition()[1]);
 
     //Controller Smart Dashboard values
     SmartDashboard.putNumber("Drive Factor: ", driveControllerFactor);
@@ -139,23 +105,8 @@ public class Robot extends TimedRobot {
     SmartDashboard.putNumber("DC Left Y: ", driveController.getLeftY());
     SmartDashboard.putNumber("DC Right X: ", driveController.getRightX());
 
-    SmartDashboard.putNumber("Angle Factor: ", angleFactor);
-    SmartDashboard.putNumber("Fire Factor: ", fireFactor);
-    SmartDashboard.putNumber("AC Left Y: ", driveController.getLeftY());    
-    SmartDashboard.putNumber("AC Right Y: ", driveController.getRightY());
-
     //Call main method for swerve drive
     mySwerveMaster.update(driveController, driveControllerFactor, turnFactor);
-
-    if(SmartDashboard.getString("Launcher Status: ", "NOT YET").equals("LAUNCHER READY") && 
-      SmartDashboard.getString("Heading Status: ", "NOT YET").equals("HEADING READY") && 
-      SmartDashboard.getString("Arm Angle Status: ", "NOT YET").equals("ARM ANGLE READY") && 
-      SmartDashboard.getString("Distance Range Status: ", "NOT YET").equals("DISTANCE RANGE READY") && 
-      SmartDashboard.getString("Angle Range Status: ", "NOT YET").equals("ANGLE RANGE READY")) {
-        SmartDashboard.putString("Auto-Shoot Status: ", "ALL SYSTEMS GO!!!");
-      } else {
-        SmartDashboard.putString("Auto-Shoot Status: ", "DON'T FIRE YET");
-      }
   }
 
   @Override
@@ -164,8 +115,6 @@ public class Robot extends TimedRobot {
 
     //Tell motors to stop
     mySwerveMaster.set(new double[]{0d, 0d, 0d, 0d}, new double[]{0d, 0d, 0d, 0d});
-    myHookMaster.stop();
-    myArmMaster.stop();
   }
 
   @Override
