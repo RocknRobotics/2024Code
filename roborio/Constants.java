@@ -41,10 +41,10 @@ public final class Constants {
             public static final double degreesPerRotation = 360 * radsPerRotation / (2 * Math.PI);
 
             //IDs of turn motors
-            public static final int leftUpID = 5;
-            public static final int leftDownID = 6;
-            public static final int rightUpID = 7;
-            public static final int rightDownID = 8;
+            public static final int leftUpID = 1;
+            public static final int leftDownID = 7;
+            public static final int rightUpID = 3;
+            public static final int rightDownID = 5;
 
             //Invert turn wheels
             public static final boolean leftUpInvert = false;
@@ -53,22 +53,22 @@ public final class Constants {
             public static final boolean rightDownInvert = false;
 
             //IDs of turn encoders
-            public static final int leftUpEncoderID = 0;
+            public static final int leftUpEncoderID = 3;
             public static final int leftDownEncoderID = 1;
             public static final int rightUpEncoderID = 2;
-            public static final int rightDownEncoderID = 3;
+            public static final int rightDownEncoderID = 0;
 
             //Encoder offsets---the values of the encoders when the module is in the "0" position (facing forward)
-            public static final double leftUpOffset = 0.037448048774097;
-            public static final double leftDownOffset = 0.8234566592540471;
-            public static final double rightUpOffset = 0.022887491889667152;
-            public static final double rightDownOffset = 0.012182849316736015;
+            public static final double leftUpOffset = 82.8;
+            public static final double leftDownOffset = 53.9;
+            public static final double rightUpOffset = 104.3;
+            public static final double rightDownOffset = 238.3;
 
             //Invert turn encoders
-            public static final boolean leftUpEncoderInvert = false;
-            public static final boolean leftDownEncoderInvert = false;
-            public static final boolean rightUpEncoderInvert = false;
-            public static final boolean rightDownEncoderInvert = false;
+            public static final boolean leftUpEncoderInvert = true;
+            public static final boolean leftDownEncoderInvert = true;
+            public static final boolean rightUpEncoderInvert = true;
+            public static final boolean rightDownEncoderInvert = true;
         }
 
         public static final class driveConstants {
@@ -85,16 +85,16 @@ public final class Constants {
             public static final double maxSpeed = 5700d; //5714.28369140625
 
             //IDs of drive motors
-            public static final int leftUpID = 1;
-            public static final int leftDownID = 2;
-            public static final int rightUpID = 3;
-            public static final int rightDownID = 4;
+            public static final int leftUpID = 2;
+            public static final int leftDownID = 8;
+            public static final int rightUpID = 4;
+            public static final int rightDownID = 6;
 
-            //INvert drive wheels
+            //Invert drive wheels
             public static final boolean leftUpInvert = false;
             public static final boolean leftDownInvert = false;
-            public static final boolean rightUpInvert = true;
-            public static final boolean rightDownInvert = true;
+            public static final boolean rightUpInvert = false;
+            public static final boolean rightDownInvert = false;
 
             //The distance in metres between the left wheels and the right wheels
             public static final double leftToRightDistanceMetres = 0.685d;
@@ -150,7 +150,7 @@ public final class Constants {
 
         //We want the returned angle to be 90 degrees when straight up
         //This should be in degrees ie after the conversion factor is applied
-        public static final double angleEncoderOffset = 0.0;
+        public static final double angleEncoderOffset = 322.9;
         //360 degrees per one rotation of the absolute encoder?
         public static final double angleConversionFactor = 360d;
 
@@ -211,6 +211,3 @@ public final class Constants {
         }
     }
 }
-
-
-

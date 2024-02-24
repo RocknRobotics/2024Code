@@ -65,7 +65,7 @@ public class SwerveModule {
 
     // Degrees position of the turn talon
     public double getAbsoluteTurnPosition() {
-        double temp = 180 - encoderInvert * (turnEncoder.getAbsolutePosition() - encoderOffset) * turnConstants.degreesPerRotation;
+        double temp = -(180 + encoderInvert * (turnEncoder.getAbsolutePosition()) * turnConstants.degreesPerRotation - encoderOffset);
 
         while(temp <= 0) {
             temp += 360;

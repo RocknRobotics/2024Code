@@ -72,7 +72,9 @@ public class Robot extends TimedRobot {
 
   //Every 20ms
   @Override
-  public void robotPeriodic() {}
+  public void robotPeriodic() {
+    SmartDashboard.putNumber("Arm Angle: ", myArmMaster.getAngle());
+  }
 
   @Override
   public void autonomousInit() {}
@@ -166,7 +168,8 @@ public class Robot extends TimedRobot {
   public void disabledPeriodic() {}
 
   @Override
-  public void testInit() {}
+  public void testInit() {
+  }
 
   @Override
   public void testPeriodic() {}

@@ -76,7 +76,16 @@ public class ArmMaster {
     }
 
     public double getAngle() {
-        return angleEncoder.getAbsolutePosition() * armConstants.angleConversionFactor - angleEncoderOffset;
+        double temp = 90 - (angleEncoder.getAbsolutePosition() * armConstants.angleConversionFactor - angleEncoderOffset);
+
+        while(temp <= 0) {
+            temp += 360;
+        }
+        while(temp > 360) {
+            temp -= 360;
+        }
+
+        return temp;
     }
 
     public void update(PS4Controller armController, double currX, double currY) {
