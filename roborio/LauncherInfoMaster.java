@@ -27,7 +27,7 @@ public class LauncherInfoMaster {
                 fullFileString += String.valueOf(currChar);
             }
 
-            launcherInfoStrings = new ArrayList<String>(Arrays.asList(fullFileString.split("?")));
+            launcherInfoStrings = new ArrayList<String>(Arrays.asList(fullFileString.split("!")));
 
             for(int i = 0; i < launcherInfoStrings.size(); i++) {
                 String distanceString = launcherInfoStrings.get(i).substring(launcherInfoStrings.get(i).indexOf("d:") + 2, launcherInfoStrings.get(i).indexOf("a0:"));
@@ -37,10 +37,14 @@ public class LauncherInfoMaster {
                 String speed0String = launcherInfoStrings.get(i).substring(launcherInfoStrings.get(i).indexOf("s0:") + 3, launcherInfoStrings.get(i).indexOf("s1:"));
                 String speed1String = launcherInfoStrings.get(i).substring(launcherInfoStrings.get(i).indexOf("s1:") + 3, launcherInfoStrings.get(i).indexOf("s2:"));
                 String speed2String = launcherInfoStrings.get(i).substring(launcherInfoStrings.get(i).indexOf("s2:") + 3, launcherInfoStrings.get(i).indexOf("?"));
+                String has0String = launcherInfoStrings.get(i).substring(launcherInfoStrings.get(i).indexOf("?") + 1, launcherInfoStrings.get(i).indexOf("?") + 2);
+                String has1String = launcherInfoStrings.get(i).substring(launcherInfoStrings.get(i).indexOf("?") + 2, launcherInfoStrings.get(i).indexOf("?") + 3);
+                String has2String = launcherInfoStrings.get(i).substring(launcherInfoStrings.get(i).indexOf("?") + 3, launcherInfoStrings.get(i).indexOf("?") + 4);
 
                 launcherInfoList.set(i, new LauncherInfo(Double.valueOf(distanceString), 
                     new double[]{Double.valueOf(angle0String), Double.valueOf(angle1String), Double.valueOf(angle2String)}, 
-                    new double[]{Double.valueOf(speed0String), Double.valueOf(speed1String), Double.valueOf(speed2String)}));
+                    new double[]{Double.valueOf(speed0String), Double.valueOf(speed1String), Double.valueOf(speed2String)},
+                    new boolean[]{has0String.equals("Y"), has1String.equals("Y"), has2String.equals("Y")}));
             }
 
             george.close();
@@ -49,7 +53,7 @@ public class LauncherInfoMaster {
         }
     }
 
-    public LauncherInfo get(double distance) {
+    public LauncherInfo get(double distance, int index) {
         if(launcherInfoList.get(0).distance > distance) {
             SmartDashboard.putString("Distance Range Status: ", "NOT YET");
             return launcherInfoList.get(0);
@@ -67,17 +71,27 @@ public class LauncherInfoMaster {
         }
 
         if(launcherInfoList.get(bottomIndex).distance == distance) {
-            SmartDashboard.putString("Distance Range Status: ", "DISTANCE RANGE READY");
+            if(launcherInfoList.get(bottomIndex).has[index]) {
+                SmartDashboard.putString("Distance Range Status: ", "DISTANCE RANGE READY");
+            } else {
+                SmartDashboard.putString("Distance Range Status: ", "NOT YET");
+            }
+
             return launcherInfoList.get(bottomIndex);
         } else {
-            SmartDashboard.putString("Distance Range Status: ", "DISTANCE RANGE READY");
+            if(launcherInfoList.get(bottomIndex).has[index]) {
+                SmartDashboard.putString("Distance Range Status: ", "DISTANCE RANGE READY");
+            } else {
+                SmartDashboard.putString("Distance Range Status: ", "NOT YET");
+            }
+
             return launcherInfoList.get(bottomIndex).interpolate(launcherInfoList.get(bottomIndex + 1), distance);
         }
     }
 
     public void storeSpeaker(double distance, double angle, double speed) {
-        String launcherString = "d:" + distance + "a0:" + angle + "a1:0a2:0s0:" + speed + "s1:0s2:0?";
-        LauncherInfo actualInfo = new LauncherInfo(distance, new double[]{angle, 0d, 0d}, new double[]{speed, 0d, 0d});
+        String launcherString = "d:" + distance + "a0:" + angle + "a1:0a2:0s0:" + speed + "s1:0s2:0?YNN!";
+        LauncherInfo actualInfo = new LauncherInfo(distance, new double[]{angle, 0d, 0d}, new double[]{speed, 0d, 0d}, new boolean[]{true, false, false});
         int index = 0;
 
         for(int i = 0; i < launcherInfoStrings.size() && launcherInfoList.get(i).distance <= distance; i++) {
@@ -85,10 +99,12 @@ public class LauncherInfoMaster {
                 actualInfo = launcherInfoList.get(i);
                 actualInfo.angles[0] = angle;
                 actualInfo.speeds[0] = speed;
+                actualInfo.has[0] = true;
 
                 launcherInfoStrings.set(i, launcherInfoStrings.get(i).substring(0, launcherInfoStrings.get(i).indexOf("a0:") + 3) + 
                 angle + launcherInfoStrings.get(i).substring(launcherInfoStrings.get(i).indexOf("a1:"), launcherInfoStrings.get(i).indexOf("s0:" + 3)) + 
-                speed + launcherInfoStrings.get(i).substring(launcherInfoStrings.get(i).indexOf("s1:")));
+                speed + launcherInfoStrings.get(i).substring(launcherInfoStrings.get(i).indexOf("s1:"), launcherInfoStrings.get(i).indexOf("?") + 1) + 
+                "Y" + launcherInfoStrings.get(i).substring(launcherInfoStrings.get(i).indexOf("?") + 2));
 
                 return;
             }
@@ -101,8 +117,8 @@ public class LauncherInfoMaster {
     }
 
     public void storeAmp(double distance, double angle, double speed) {
-        String launcherString = "d:" + distance + "a0:0a1:" + angle + "a2:0s0:0s1:" + speed + "s2:0?";
-        LauncherInfo actualInfo = new LauncherInfo(distance, new double[]{0d, angle, 0d}, new double[]{0d, speed, 0d});
+        String launcherString = "d:" + distance + "a0:0a1:" + angle + "a2:0s0:0s1:" + speed + "s2:0?NYN!";
+        LauncherInfo actualInfo = new LauncherInfo(distance, new double[]{0d, angle, 0d}, new double[]{0d, speed, 0d}, new boolean[]{false, true, false});
         int index = 0;
 
         for(int i = 0; i < launcherInfoStrings.size() && launcherInfoList.get(i).distance <= distance; i++) {
@@ -110,10 +126,12 @@ public class LauncherInfoMaster {
                 actualInfo = launcherInfoList.get(i);
                 actualInfo.angles[1] = angle;
                 actualInfo.speeds[1] = speed;
+                actualInfo.has[1] = true;
 
                 launcherInfoStrings.set(i, launcherInfoStrings.get(i).substring(0, launcherInfoStrings.get(i).indexOf("a1:") + 3) + 
                 angle + launcherInfoStrings.get(i).substring(launcherInfoStrings.get(i).indexOf("a2:"), launcherInfoStrings.get(i).indexOf("s1:" + 3)) + 
-                speed + launcherInfoStrings.get(i).substring(launcherInfoStrings.get(i).indexOf("s2:")));
+                speed + launcherInfoStrings.get(i).substring(launcherInfoStrings.get(i).indexOf("s2:"), launcherInfoStrings.get(i).indexOf("?") + 2) + 
+                "Y" + launcherInfoStrings.get(i).substring(launcherInfoStrings.get(i).indexOf("?") + 3));
 
                 return;
             }
@@ -126,8 +144,8 @@ public class LauncherInfoMaster {
     }
 
     public void storeTrap(double distance, double angle, double speed) {
-        String launcherString = "d:" + distance + "a0:0a1:0a2:" + angle + "s0:0s1:0s2:" + speed + "?";
-        LauncherInfo actualInfo = new LauncherInfo(distance, new double[]{0d, 0d, angle}, new double[]{0d, 0d, speed});
+        String launcherString = "d:" + distance + "a0:0a1:0a2:" + angle + "s0:0s1:0s2:" + speed + "?NNY!";
+        LauncherInfo actualInfo = new LauncherInfo(distance, new double[]{0d, 0d, angle}, new double[]{0d, 0d, speed}, new boolean[]{false, false, true});
         int index = 0;
 
         for(int i = 0; i < launcherInfoStrings.size() && launcherInfoList.get(i).distance <= distance; i++) {
@@ -138,7 +156,8 @@ public class LauncherInfoMaster {
 
                 launcherInfoStrings.set(i, launcherInfoStrings.get(i).substring(0, launcherInfoStrings.get(i).indexOf("a2:") + 3) + 
                 angle + launcherInfoStrings.get(i).substring(launcherInfoStrings.get(i).indexOf("s0:"), launcherInfoStrings.get(i).indexOf("s2:" + 3)) + 
-                speed + launcherInfoStrings.get(i).substring(launcherInfoStrings.get(i).indexOf("?")));
+                speed + launcherInfoStrings.get(i).substring(launcherInfoStrings.get(i).indexOf("?"), launcherInfoStrings.get(i).indexOf("?") + 3) + 
+                "Y" + launcherInfoStrings.get(i).substring(launcherInfoStrings.get(i).indexOf("?") + 4));
 
                 return;
             }

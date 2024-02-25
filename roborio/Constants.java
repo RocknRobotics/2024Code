@@ -27,8 +27,20 @@ public final class Constants {
     public static final double[] rightUpStartPos = new double[]{0.3425d, 0.3425d};
     public static final double[] rightDownStartPos = new double[]{0.3425d, -0.3425d};
 
+    public static final double accelerometerOdometerTolerancePosition = 0.1;
+    public static final double accelerometerOdometerToleranceVelocity = 1;
+
     public static final class motorConstants {
         public static final class turnConstants {
+            public static final class motorAccelRates {
+                //Ranges from 0 to 2
+                //The max percentage acceleration allowed within a periodic tick
+                public static final double leftUp = 0.5;
+                public static final double leftDown = 0.5;
+                public static final double rightUp = 0.5;
+                public static final double rightDown = 0.5;
+            }
+
             //PID controller position constant
             public static final double kP = 1.0;
 
@@ -72,6 +84,15 @@ public final class Constants {
         }
 
         public static final class driveConstants {
+            public static final class motorAccelRates {
+                //Ranges from 0 to 2
+                //The max percentage acceleration allowed within a periodic tick
+                public static final double leftUp = 0.5;
+                public static final double leftDown = 0.5;
+                public static final double rightUp = 0.5;
+                public static final double rightDown = 0.5;
+            }
+
             //The gear ratio between the drive motors and the drive wheel---the amount of drive wheel rotations per motor rotation
             public static final double gearRatio = 1d / 6.12d;
 
@@ -141,12 +162,36 @@ public final class Constants {
             public static final int angleEncoder = 0;
         }
 
+        public static final class motorInversion {
+            public static final boolean groundRoller = false;
+            public static final boolean bottomIntake = false;
+            public static final boolean topIntake = false;
+            public static final boolean backMiddleRoller = false;
+            public static final boolean frontMiddleRoller = false;
+            public static final boolean backLauncher = false;
+            public static final boolean frontLauncher = false;
+            public static final boolean launcherAngle = false;
+        }
+
+        public static final class motorAccelRates {
+            //Ranges from 0 to 2
+            //The max percentage acceleration allowed within a periodic tick
+            public static final double groundRoller = 0.4;
+            public static final double bottomIntake = 0.4;
+            public static final double topIntake = 0.4;
+            public static final double backMiddleRoller = 0.4;
+            public static final double frontMiddleRoller = 0.4;
+            public static final double backLauncher = 0.4;
+            public static final double frontLauncher = 0.4;
+            public static final double launcherAngle = 0.4;
+        }
+
         //Range from -1 to 1
         //speed < 0 should represent the bottom row spinning such that the note travels away from the launcher
-        //speed > 0 should represent the bottom row spinning such that the not travels closer to the launcher
-        public static final double intakeIntakeSpeed = 0.25;
-        public static final double middleIntakeSpeed = 0.25;
-        public static final double launcherIntakeSpeed = -0.5;
+        //speed > 0 should represent the bottom row spinning such that the note travels closer to the launcher
+        public static final double intakeIntakeSpeed = 0.1;//0.25;
+        public static final double middleIntakeSpeed = 0.1;//0.25;
+        public static final double launcherIntakeSpeed = -0.2;//-0.5;
 
         //We want the returned angle to be 90 degrees when straight up
         //This should be in degrees ie after the conversion factor is applied
@@ -159,8 +204,20 @@ public final class Constants {
     }
 
     public static final class hookConstants {
+        public static final class motorAccelRates {
+            //Ranges from 0 to 2
+            //The max percentage acceleration allowed within a periodic tick
+            public static final double leftHook = 0.2;
+            public static final double rightHook = 0.2;
+        }
+
         public static final int leftHookID = 18;
         public static final int rightHookID = 17;
+
+        public static final boolean leftHookInverted = false;
+        public static final boolean rightHookInverted = false;
+
+        public static final double extensionSpeed = 0.1;//1;
 
         //The length of time (in milliseconds) it takes for the hooks to fully extend
         public static final long extendTimeMillis = 1000;

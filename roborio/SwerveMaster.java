@@ -68,13 +68,13 @@ public class SwerveMaster {
     public SwerveMaster() {
         //Create swerve module objects
         leftUpModule = new SwerveModule(driveConstants.leftUpID, turnConstants.leftUpID, turnConstants.leftUpEncoderID, driveConstants.leftUpInvert, 
-        turnConstants.leftUpInvert, turnConstants.leftUpEncoderInvert, turnConstants.leftUpOffset);
+        turnConstants.leftUpInvert, turnConstants.leftUpEncoderInvert, turnConstants.leftUpOffset, driveConstants.motorAccelRates.leftUp, turnConstants.motorAccelRates.leftUp);
         leftDownModule = new SwerveModule(driveConstants.leftDownID, turnConstants.leftDownID, turnConstants.leftDownEncoderID, driveConstants.leftDownInvert, 
-        turnConstants.leftDownInvert, turnConstants.leftDownEncoderInvert, turnConstants.leftDownOffset);
+        turnConstants.leftDownInvert, turnConstants.leftDownEncoderInvert, turnConstants.leftDownOffset, driveConstants.motorAccelRates.leftDown, turnConstants.motorAccelRates.leftDown);
         rightUpModule = new SwerveModule(driveConstants.rightUpID, turnConstants.rightUpID, turnConstants.rightUpEncoderID, driveConstants.rightUpInvert, 
-        turnConstants.rightUpInvert, turnConstants.rightUpEncoderInvert, turnConstants.rightUpOffset);
+        turnConstants.rightUpInvert, turnConstants.rightUpEncoderInvert, turnConstants.rightUpOffset, driveConstants.motorAccelRates.rightUp, turnConstants.motorAccelRates.rightUp);
         rightDownModule = new SwerveModule(driveConstants.rightDownID, turnConstants.rightDownID, turnConstants.rightDownEncoderID, driveConstants.rightDownInvert, 
-        turnConstants.rightDownInvert, turnConstants.rightDownEncoderInvert, turnConstants.rightDownOffset);
+        turnConstants.rightDownInvert, turnConstants.rightDownEncoderInvert, turnConstants.rightDownOffset, driveConstants.motorAccelRates.rightDown, turnConstants.motorAccelRates.rightDown);
 
         //Set their position in relation to the center of the robot
         leftUpModule.resetPosition(Constants.leftUpStartPos);
@@ -85,6 +85,7 @@ public class SwerveMaster {
         //Create accelerometer object
         accelerometer = new AHRS(Port.kMXP, Constants.accelerometerUpdateFrequency);
         accelerometer.reset();
+        accelerometer.resetDisplacement();
 
         //Create PID Controller object
         turnPIDController = new PIDController(Constants.motorConstants.turnConstants.kP, 0d, 0);
@@ -527,8 +528,13 @@ public class SwerveMaster {
         double[] center2 = {(leftDownPos[0] + rightUpPos[0]) / 2, (leftDownPos[1] + rightUpPos[1]) / 2};
 
         //Calculate mid-point of the two centers to get "true center" (supposedly)
-        robotPosition[0] = (center1[0] + center2[0]) / 2;
-        robotPosition[1] = (center1[1] + center2[1]) / 2;
+        double[] wheelCenter = new double[]{(center1[0] + center2[0]) / 2, (center1[1] + center2[1]) / 2};
+        //Displacement X/Y might be flipped
+        double[] accelerometerCenter = new double[]{accelerometer.getDisplacementX() + robotPosition[0], accelerometer.getDisplacementY() + robotPosition[1]};
+        robotPosition[0] = Math.abs(wheelCenter[0] - accelerometerCenter[0]) > Constants.accelerometerOdometerTolerancePosition ? accelerometerCenter[0] : wheelCenter[0];
+        robotPosition[1] = Math.abs(wheelCenter[1] - accelerometerCenter[1]) > Constants.accelerometerOdometerTolerancePosition ? accelerometerCenter[1] : wheelCenter[1];
+
+        accelerometer.resetDisplacement();
 
         //Reset position of wheels with new center
         //Have to account for which direction the robot is facing
@@ -562,6 +568,9 @@ public class SwerveMaster {
         //Calculate velocity using delta position and delta time
         velocity[0] = delta[0] / deltaTime;
         velocity[1] = delta[1] / deltaTime; 
+
+        velocity[0] = Math.abs(velocity[0] - accelerometer.getVelocityX()) > Constants.accelerometerOdometerToleranceVelocity ? accelerometer.getVelocityX() : velocity[0];
+        velocity[1] = Math.abs(velocity[1] - accelerometer.getVelocityY()) > Constants.accelerometerOdometerToleranceVelocity ? accelerometer.getVelocityY() : velocity[1];
 
         //Set new prev stuff
         prevPosition[0] = robotPosition[0];
@@ -623,44 +632,4 @@ public class SwerveMaster {
         //ChassisSpeeds​(double vxMetersPerSecond, double vyMetersPerSecond, double omegaDegreesPerSecond)
         chassisPublisher.set(new double[]{robotVelocity[0], robotVelocity[1], omega});
     }
-
-    //PathPlanner - Set new pose sent from network table if the pose boolean sent is true
-    /*public void setPathplannerPose2d() {
-        //Recieve boolean
-        boolean set = poseBooleanSubscriber.get();
-        if (set) {
-            //Recieve pose array as [x, y, radians]
-            double[] pose = poseSubscriber.get();
-
-            //Convert angle to degrees 
-            pose[2] *= 180 / Math.PI;
-            
-            //Set stuff (might not need angle?)
-            resetRobotPosition(pose[0], pose[1]);
-        }
-    }*/
-
-    //PathPlanner - Set new ROBOT RELATIVE Chassis Speeds from network table if speeds boolean is true
-    /*public void setPathPlannerSpeeds(double driveFactor, double turnFactor) {
-        //Recieve boolean
-        boolean set = ChassisSpeedsBooleanSubscriber.get();
-
-        //Cancel drive if setting speeds
-        pathing = set;
-        if (set) {
-            //Recieve pose array as [vx, vy, omega]
-            double[] speeds = ChassisSpeedsSubscriber.get();
-
-            //Convert angle to degrees per second
-            speeds[2] *= 180 / Math.PI;
-
-            //Convert to an input
-            speeds[2] /= 360;
-            
-            //Set stuff 
-            teleopUpdate(speeds, 
-            new double[]{leftUpModule.getAbsoluteTurnPosition(), leftDownModule.getAbsoluteTurnPosition(), rightUpModule.getAbsoluteTurnPosition(), rightDownModule.getAbsoluteTurnPosition()}, 
-            0, driveFactor, turnFactor);        
-        }
-    }*/
 }

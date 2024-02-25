@@ -15,6 +15,10 @@ public class HookMaster {
     public HookMaster() {
         leftHook = new CANSparkMax(hookConstants.leftHookID, MotorType.kBrushless);
         rightHook = new CANSparkMax(hookConstants.rightHookID, MotorType.kBrushless);
+
+        leftHook.setInverted(hookConstants.leftHookInverted);
+        rightHook.setInverted(hookConstants.rightHookInverted);
+
         startMillis = System.currentTimeMillis();
         extended = false;
         timeFulfilled = false;
@@ -22,19 +26,19 @@ public class HookMaster {
 
     //returns false while count < hookConstants.countsTillTop
     public void extend() {
-        leftHook.set(1);
-        rightHook.set(1);
+        leftHook.set(Math.abs(hookConstants.extensionSpeed - leftHook.get()) > hookConstants.motorAccelRates.leftHook ? Math.signum(hookConstants.extensionSpeed - leftHook.get()) * hookConstants.motorAccelRates.leftHook : hookConstants.extensionSpeed);
+        rightHook.set(Math.abs(hookConstants.extensionSpeed - rightHook.get()) > hookConstants.motorAccelRates.rightHook ? Math.signum(hookConstants.extensionSpeed - rightHook.get()) * hookConstants.motorAccelRates.rightHook : hookConstants.extensionSpeed);
     }
 
     //returns false while count < hookConstants.countsTillTop
     public void retract() {
-        leftHook.set(-1);
-        rightHook.set(-1);
+        leftHook.set(Math.abs(-hookConstants.extensionSpeed - leftHook.get()) > hookConstants.motorAccelRates.leftHook ? Math.signum(-hookConstants.extensionSpeed - leftHook.get()) * hookConstants.motorAccelRates.leftHook : -hookConstants.extensionSpeed);
+        rightHook.set(Math.abs(-hookConstants.extensionSpeed - rightHook.get()) > hookConstants.motorAccelRates.rightHook ? Math.signum(-hookConstants.extensionSpeed - rightHook.get()) * hookConstants.motorAccelRates.rightHook : -hookConstants.extensionSpeed);
     }
 
     public void stop() {
-        leftHook.set(0);
-        rightHook.set(0);
+        leftHook.set(Math.abs(-leftHook.get()) > hookConstants.motorAccelRates.leftHook ? Math.signum(-leftHook.get()) * hookConstants.motorAccelRates.leftHook : 0);
+        rightHook.set(Math.abs(-rightHook.get()) > hookConstants.motorAccelRates.rightHook ? Math.signum(-rightHook.get()) * hookConstants.motorAccelRates.rightHook : 0);
     }
 
     public void update(boolean shareButtonPressed) {
@@ -54,6 +58,12 @@ public class HookMaster {
 
         if(duration >= Constants.hookConstants.extendTimeMillis) {
             stop();
+        } else {
+            if(extended) {
+                extend();
+            } else {
+                retract();
+            }
         }
     }
 }

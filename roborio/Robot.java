@@ -51,12 +51,6 @@ public class Robot extends TimedRobot {
     //Create SwerveMaster object
     mySwerveMaster = new SwerveMaster();
 
-    //Set mode to brake
-    mySwerveMaster.leftUpModule.driveMotor.setIdleMode(CANSparkBase.IdleMode.kBrake);
-    mySwerveMaster.leftDownModule.driveMotor.setIdleMode(CANSparkBase.IdleMode.kBrake);
-    mySwerveMaster.rightUpModule.driveMotor.setIdleMode(CANSparkBase.IdleMode.kBrake);
-    mySwerveMaster.rightDownModule.driveMotor.setIdleMode(CANSparkBase.IdleMode.kBrake);
-
     //Reset accelerometer on startup
     mySwerveMaster.resetAccelerometer();
 
@@ -155,17 +149,15 @@ public class Robot extends TimedRobot {
   }
 
   @Override
-  public void disabledInit() {
-    SmartDashboard.putString("Mode: ", "disabledInit");
+  public void disabledInit() {}
 
-    //Tell motors to stop
+  @Override
+  public void disabledPeriodic() {
+    //Since we added accel rates, we need to continuously bring them to 0 in case they didn't get there in one tick
     mySwerveMaster.stop();;
     myHookMaster.stop();
     myArmMaster.stop();
   }
-
-  @Override
-  public void disabledPeriodic() {}
 
   @Override
   public void testInit() {

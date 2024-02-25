@@ -30,7 +30,11 @@ public class SwerveModule {
     private double prevTime;
     private double[] currPos;
 
-    public SwerveModule(int driveMotorID, int turnMotorID, int turnEncoderID, boolean driveMotorInvert, boolean turnMotorInvert, boolean encoderInvert, double offsetAngle) {
+    //Accel rates since module doesn't know who it is
+    private double driveMaxAccel;
+    private double turnMaxAccel;
+
+    public SwerveModule(int driveMotorID, int turnMotorID, int turnEncoderID, boolean driveMotorInvert, boolean turnMotorInvert, boolean encoderInvert, double offsetAngle, double driveMaxAccel, double turnMaxAccel) {
         driveMotor = new CANSparkMax(driveMotorID, MotorType.kBrushless);
         turnMotor = new CANSparkMax(turnMotorID, MotorType.kBrushless);
         driveRelative = driveMotor.getEncoder();
@@ -45,6 +49,9 @@ public class SwerveModule {
         currPos = new double[2];
 
         this.encoderInvert = encoderInvert ? -1 : 1;
+
+        this.driveMaxAccel = driveMaxAccel;
+        this.turnMaxAccel = turnMaxAccel;
     }
 
     //Returns a SwerveModuleState representation of this SwerveModule
@@ -54,8 +61,8 @@ public class SwerveModule {
 
     //Set drive and turn motors
     public void set(double driveSet, double turnSet) {
-        driveMotor.set(driveSet);
-        turnMotor.set(turnSet);
+        driveMotor.set(Math.abs(driveSet - driveMotor.get()) > driveMaxAccel ? Math.signum(driveSet - driveMotor.get()) * driveMaxAccel : driveSet);
+        turnMotor.set(Math.abs(turnSet - turnMotor.get()) > turnMaxAccel ? Math.signum(turnSet - turnMotor.get()) * turnMaxAccel : turnSet);
     }
 
     //Metres position of the drive talon

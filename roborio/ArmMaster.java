@@ -28,6 +28,8 @@ public class ArmMaster {
         myLauncherInfoMaster = new LauncherInfoMaster();
         blue = DriverStation.getAlliance().get() == DriverStation.Alliance.Blue;
 
+        launcherAngle.setInverted(armConstants.motorInversion.launcherAngle);
+
         SmartDashboard.putNumber("Info: Distance: ", 0d);
         SmartDashboard.putNumber("Info: Speed: ", 0d);
         SmartDashboard.putBoolean("Update Speaker Info: ", false);
@@ -46,7 +48,7 @@ public class ArmMaster {
     }
 
     public void stopAngle() {
-        launcherAngle.set(0);
+        launcherAngle.set(Math.abs(-launcherAngle.get()) > armConstants.motorAccelRates.launcherAngle ? Math.signum(-launcherAngle.get()) * armConstants.motorAccelRates.launcherAngle : 0);
     }
     
     public void stopIntake() {
@@ -64,7 +66,7 @@ public class ArmMaster {
     }
 
     public void changeAngle(double speed) {
-        launcherAngle.set(speed);
+        launcherAngle.set(Math.abs(speed - launcherAngle.get()) > armConstants.motorAccelRates.launcherAngle ? Math.signum(speed - launcherAngle.get()) * armConstants.motorAccelRates.launcherAngle : speed);
     }
 
     public void prepLauncher(double speed) {
@@ -96,7 +98,7 @@ public class ArmMaster {
 
         if(armController.getSquareButton()) {
             //Prep arm for scoring into speaker
-            LauncherInfo info = myLauncherInfoMaster.get(Math.sqrt(Math.pow(currX - gameConstants.speakerX, 2) + Math.pow(currY - (blue ? gameConstants.blueConstants.speakerY : gameConstants.redConstants.speakerY), 2)));
+            LauncherInfo info = myLauncherInfoMaster.get(Math.sqrt(Math.pow(currX - gameConstants.speakerX, 2) + Math.pow(currY - (blue ? gameConstants.blueConstants.speakerY : gameConstants.redConstants.speakerY), 2)), 0);
             prepLauncher(info.speeds[0]);
 
             if(Math.abs(info.angles[0] - getAngle()) < armConstants.angleTolerance) {
@@ -108,7 +110,7 @@ public class ArmMaster {
             }
         } else if(armController.getCrossButton()) {
             //Prep arm for scoring into amp
-            LauncherInfo info = myLauncherInfoMaster.get(Math.sqrt(Math.pow(currX - gameConstants.ampX, 2) + Math.pow(currY - (blue ? gameConstants.blueConstants.ampY : gameConstants.redConstants.ampY), 2)));
+            LauncherInfo info = myLauncherInfoMaster.get(Math.sqrt(Math.pow(currX - gameConstants.ampX, 2) + Math.pow(currY - (blue ? gameConstants.blueConstants.ampY : gameConstants.redConstants.ampY), 2)), 1);
             prepLauncher(info.speeds[1]);
             
             if(Math.abs(info.angles[1] - getAngle()) < armConstants.angleTolerance) {
@@ -120,7 +122,7 @@ public class ArmMaster {
             }
         } else if(armController.getCircleButton()) {
             //Prep arm for scoring into trap1
-            LauncherInfo info = myLauncherInfoMaster.get(Math.sqrt(Math.pow(currX - gameConstants.trapX1, 2) + Math.pow(currY - (blue ? gameConstants.blueConstants.trapY1 : gameConstants.redConstants.trapY1), 2)));
+            LauncherInfo info = myLauncherInfoMaster.get(Math.sqrt(Math.pow(currX - gameConstants.trapX1, 2) + Math.pow(currY - (blue ? gameConstants.blueConstants.trapY1 : gameConstants.redConstants.trapY1), 2)), 2);
             prepLauncher(info.speeds[2]);
 
             if(Math.abs(info.angles[2] - getAngle()) < armConstants.angleTolerance) {
@@ -132,7 +134,7 @@ public class ArmMaster {
             }
         } else if(armController.getTriangleButton()) {
             //Prep arm for scoring into trap2
-            LauncherInfo info = myLauncherInfoMaster.get(Math.sqrt(Math.pow(currX - gameConstants.trapX2, 2) + Math.pow(currY - (blue ? gameConstants.blueConstants.trapY2 : gameConstants.redConstants.trapY2), 2)));
+            LauncherInfo info = myLauncherInfoMaster.get(Math.sqrt(Math.pow(currX - gameConstants.trapX2, 2) + Math.pow(currY - (blue ? gameConstants.blueConstants.trapY2 : gameConstants.redConstants.trapY2), 2)), 2);
             prepLauncher(info.speeds[2]);
 
             if(Math.abs(info.angles[2] - getAngle()) < armConstants.angleTolerance) {
@@ -144,7 +146,7 @@ public class ArmMaster {
             }
         } else if(armController.getOptionsButton()) {
             //Prep arm for scoring into trap3
-            LauncherInfo info = myLauncherInfoMaster.get(Math.sqrt(Math.pow(currX - gameConstants.trapX3, 2) + Math.pow(currY - (blue ? gameConstants.blueConstants.trapY3 : gameConstants.redConstants.trapY3), 2)));
+            LauncherInfo info = myLauncherInfoMaster.get(Math.sqrt(Math.pow(currX - gameConstants.trapX3, 2) + Math.pow(currY - (blue ? gameConstants.blueConstants.trapY3 : gameConstants.redConstants.trapY3), 2)), 2);
             prepLauncher(info.speeds[2]);
             
             if(Math.abs(info.angles[2] - getAngle()) < armConstants.angleTolerance) {
@@ -152,7 +154,7 @@ public class ArmMaster {
                 changeAngle(0);
             } else {
                 SmartDashboard.putString("Arm Angle Status: ", "NOT YET");
-                changeAngle( (info.angles[2] - getAngle()) / 45);
+                changeAngle((info.angles[2] - getAngle()) / 45);
             }
         } else {
             SmartDashboard.putString("Launcher Status: ", "NOT YET");
