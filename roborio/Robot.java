@@ -68,6 +68,10 @@ public class Robot extends TimedRobot {
   @Override
   public void robotPeriodic() {
     SmartDashboard.putNumber("Arm Angle: ", myArmMaster.getAngle());
+    SmartDashboard.putNumber("LU Angle: ", mySwerveMaster.leftUpModule.getAbsoluteTurnPosition());
+    SmartDashboard.putNumber("LD Angle: ", mySwerveMaster.leftDownModule.getAbsoluteTurnPosition());
+    SmartDashboard.putNumber("RU Angle: ", mySwerveMaster.rightUpModule.getAbsoluteTurnPosition());
+    SmartDashboard.putNumber("RD Angle: ", mySwerveMaster.rightDownModule.getAbsoluteTurnPosition());
   }
 
   @Override
@@ -164,5 +168,25 @@ public class Robot extends TimedRobot {
   }
 
   @Override
-  public void testPeriodic() {}
+  public void testPeriodic() {
+    /*mySwerveMaster.leftUpModule.driveMotor.set(driveController.getLeftY());
+    mySwerveMaster.leftDownModule.driveMotor.set(driveController.getRightY());
+    mySwerveMaster.rightUpModule.driveMotor.set(driveController.getLeftY());
+    mySwerveMaster.rightDownModule.driveMotor.set(driveController.getRightY());*/
+    /*mySwerveMaster.leftUpModule.turnMotor.set(driveController.getLeftY());
+    mySwerveMaster.leftDownModule.turnMotor.set(driveController.getRightY());
+    mySwerveMaster.rightUpModule.turnMotor.set(driveController.getLeftY());
+    mySwerveMaster.rightDownModule.turnMotor.set(driveController.getRightY());*/
+    /*myArmMaster.launcherAngle.set(driveController.getLeftY());
+    myArmMaster.myIntake.groundRoller.set(driveController.getRightY());*/
+    /*myArmMaster.myIntake.bottomIntake.set(driveController.getLeftY());
+    myArmMaster.myIntake.topIntake.set(driveController.getRightY());*/
+    /*myArmMaster.myLauncher.backMiddleRoller.set(driveController.getLeftY());
+    myArmMaster.myLauncher.frontMiddleRoller.set(driveController.getRightY());*/
+    myArmMaster.myLauncher.backLauncher.set(driveController.getLeftY());
+    myArmMaster.myLauncher.frontLauncher.set(driveController.getRightY());
+
+    SmartDashboard.putNumber("Drive Controller Left Y: ", driveController.getLeftY());
+    SmartDashboard.putNumber("Drive Controller Right Y: ", driveController.getRightY());
+  }
 }

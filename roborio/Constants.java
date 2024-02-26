@@ -53,10 +53,10 @@ public final class Constants {
             public static final double degreesPerRotation = 360 * radsPerRotation / (2 * Math.PI);
 
             //IDs of turn motors
-            public static final int leftUpID = 1;
-            public static final int leftDownID = 7;
-            public static final int rightUpID = 3;
-            public static final int rightDownID = 5;
+            public static final int leftUpID = 3;
+            public static final int leftDownID = 5;
+            public static final int rightUpID = 1;
+            public static final int rightDownID = 7;
 
             //Invert turn wheels
             public static final boolean leftUpInvert = false;
@@ -106,10 +106,10 @@ public final class Constants {
             public static final double maxSpeed = 5700d; //5714.28369140625
 
             //IDs of drive motors
-            public static final int leftUpID = 2;
-            public static final int leftDownID = 8;
-            public static final int rightUpID = 4;
-            public static final int rightDownID = 6;
+            public static final int leftUpID = 4;
+            public static final int leftDownID = 6;
+            public static final int rightUpID = 2;
+            public static final int rightDownID = 8;
 
             //Invert drive wheels
             public static final boolean leftUpInvert = false;
@@ -168,7 +168,7 @@ public final class Constants {
             public static final boolean topIntake = false;
             public static final boolean backMiddleRoller = false;
             public static final boolean frontMiddleRoller = false;
-            public static final boolean backLauncher = false;
+            public static final boolean backLauncher = true;
             public static final boolean frontLauncher = false;
             public static final boolean launcherAngle = false;
         }
