@@ -135,8 +135,8 @@ public class Robot extends TimedRobot {
 
     SmartDashboard.putNumber("Angle Factor: ", angleFactor);
     SmartDashboard.putNumber("Fire Factor: ", fireFactor);
-    SmartDashboard.putNumber("AC Left Y: ", driveController.getLeftY());    
-    SmartDashboard.putNumber("AC Right Y: ", driveController.getRightY());
+    SmartDashboard.putNumber("AC Left Y: ", armController.getLeftY());    
+    SmartDashboard.putNumber("AC Right Y: ", armController.getRightY());
 
     //Call main method for swerve drive
     mySwerveMaster.update(driveController, driveControllerFactor, turnFactor);
@@ -183,8 +183,9 @@ public class Robot extends TimedRobot {
     myArmMaster.myIntake.topIntake.set(driveController.getRightY());*/
     /*myArmMaster.myLauncher.backMiddleRoller.set(driveController.getLeftY());
     myArmMaster.myLauncher.frontMiddleRoller.set(driveController.getRightY());*/
-    myArmMaster.myLauncher.backLauncher.set(driveController.getLeftY());
-    myArmMaster.myLauncher.frontLauncher.set(driveController.getRightY());
+    /*myArmMaster.myLauncher.backLauncher.set(driveController.getLeftY());
+    myArmMaster.myLauncher.frontLauncher.set(driveController.getRightY());*/
+    mySwerveMaster.leftDownModule.driveMotor.set(driveController.getLeftY());
 
     SmartDashboard.putNumber("Drive Controller Left Y: ", driveController.getLeftY());
     SmartDashboard.putNumber("Drive Controller Right Y: ", driveController.getRightY());
