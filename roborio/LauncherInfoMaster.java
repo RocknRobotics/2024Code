@@ -170,7 +170,14 @@ public class LauncherInfoMaster {
     }
 
     public void updateDataFile() {
+        String fullFileString = "";
+        for(int i = 0; i < launcherInfoStrings.size(); i++) {
+            fullFileString += launcherInfoStrings.get(i);
+        }
+        SmartDashboard.putString("LauncherInfo: ", fullFileString);
+        /* 
         try {
+
             FileWriter george = new FileWriter("launcherExperimentData.txt", false);
             String fullFileString = "";
 
@@ -183,5 +190,6 @@ public class LauncherInfoMaster {
         } catch(IOException e) {
             e.printStackTrace();
         }
+        */
     }
 }
