@@ -171,10 +171,13 @@ public class LauncherInfoMaster {
 
     public void updateDataFile() {
         String fullFileString = "";
+        String filePath = "C:/launcherExperiment.txt"
         for(int i = 0; i < launcherInfoStrings.size(); i++) {
             fullFileString += launcherInfoStrings.get(i);
         }
-        SmartDashboard.putString("LauncherInfo: ", fullFileString);
+
+        SmartDashboard.putString("File Write Path", filePath);
+        SmartDashboard.putString("File Write Contents", fullFileString);
         /* 
         try {
 

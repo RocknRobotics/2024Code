@@ -8,6 +8,7 @@ import com.revrobotics.CANSparkBase;
 
 import edu.wpi.first.wpilibj.PS4Controller;
 import edu.wpi.first.wpilibj.TimedRobot;
+import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
 
@@ -41,6 +42,9 @@ public class Robot extends TimedRobot {
     
   @Override
   public void robotInit() {
+    NetworkTableInstance inst = NetworkTableInstance.createInstance();
+    inst.startServer();
+    SmartDashboard.setNetworkTableInstance(inst);
     SmartDashboard.putString("Current mode: ", "robotInit");
 
     //Controller variables

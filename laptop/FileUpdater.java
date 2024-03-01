@@ -11,9 +11,9 @@ public class FileUpdater {
 
     public static void initialization(boolean runThis) {
         if(runThis) {
-            NetworkTableInstance inst = NetworkTableInstance.getDefault();
-            inst.startClient4("team3692-frc2024");
-            inst.setServerTeam(3692, NetworkTableInstance.kDefaultPort4);
+            NetworkTableInstance inst = NetworkTableInstance.createInstance();
+            inst.startClient4("laptopFileClient");
+            inst.setServer("10.36.92.2", NetworkTableInstance.kDefaultPort4);
             SmartDashboard.setNetworkTableInstance(inst);
 
             SmartDashboard.putString("File Write Contents", "");
