@@ -51,13 +51,12 @@ public class SwerveMaster {
 
     //PathPlanner - Network tables
     private NetworkTableInstance jetsonClient;
-    private DoubleArrayPublisher chassisPublisher;
-    private DoubleArrayPublisher posePublisher;
-    private DoubleArraySubscriber poseSubscriber;
-    private BooleanSubscriber poseBooleanSubscriber;
-    private DoubleArraySubscriber ChassisSpeedsSubscriber;
-    private BooleanSubscriber ChassisSpeedsBooleanSubscriber;
-    
+    private DoubleArrayPublisher velocityPublisher;
+    private DoubleArrayPublisher positionPublisher;
+    private DoubleSubscriber xVelocitySubscriber;   
+    private DoubleSubscriber yVelocitySubscriber;
+    private DoubleSubscriber turnVelocitySubscriber;
+    private BooleanSubscriber completedPathSubscriber;
 
     //PathPlanner - True if path planner is controlling robot, cancels controller
     boolean pathing = false;
@@ -118,14 +117,13 @@ public class SwerveMaster {
         jetsonClient.startClient4("roboRio");
 
         //Publishers and subscribers
-        chassisPublisher = jetsonClient.getDoubleArrayTopic("/roborio/swervemaster/chassis").publish();
-        posePublisher = jetsonClient.getDoubleArrayTopic("/roborio/swervemaster/pose").publish();
-        /*poseSubscriber = jetsonClient.getDoubleArrayTopic("/roborio/swervemaster/resetPoseArray").subscribe(new double[]{0, 0, 0}, null);
-        poseBooleanSubscriber = jetsonClient.getBooleanTopic("/roborio/swervemaster/resetPoseBoolean").subscribe(false, null);
-        ChassisSpeedsSubscriber = jetsonClient.getDoubleArrayTopic("/roborio/swervemaster/setChassisSpeeds").subscribe(new double[]{0, 0, 0}, null);
-        ChassisSpeedsBooleanSubscriber = jetsonClient.getBooleanTopic("/roborio/swervemaster/setChassisSpeedsBoolean").subscribe(false, null);
-*/
-
+        velocityPublisher = jetsonClient.getDoubleArrayTopic("/roborio/swervemaster/startVel").publish();
+        positionPublisher = jetsonClient.getDoubleArrayTopic("/roborio/swervemaster/startPos").publish();
+        xVelocitySubscriber = jetsonClient.getDoubleTopic("/roborio/swervemaster/pathVelocitiesX").subscribe(0);
+        yVelocitySubscriber = jetsonClient.getDoubleTopic("/roborio/swervemaster/pathVelocitiesY").subscribe(0);
+        turnVelocitySubscriber = jetsonClient.getDoubleTopic("/roborio/swervemaster/pathVelocitiesOmega").subscribe(0);
+        completedPathSubscriber = jetsonClient.getBooleanTopic("/roborio/swervemaster/pathCompleted").subscribe(true);
+        
         blue = DriverStation.getAlliance().get() == DriverStation.Alliance.Blue;
 
         SmartDashboard.putString("Heading Status: ", "NOT YET");
@@ -478,9 +476,8 @@ public class SwerveMaster {
         SmartDashboard.putNumber("Robot Y", robotPosition[1]);
 
         //Pathplanner - Send information to network table
-        sendPose2dtoNetwork();
-        sendChassisSpeedstoNetwork();
-        //jetsonClient.flush();
+        sendPositiontoNetwork();
+        sendVelocitiestoNetwork();
 
         //Set the wheel speeds
         set(driveSets, turnSets);
@@ -613,23 +610,35 @@ public class SwerveMaster {
 
      
     //PathPlanner - send Pose2d to network table
-    public void sendPose2dtoNetwork() {
+    public void sendPositiontoNetwork() {
         //Get current angle
         double angle = getReducedAngle();
 
         //Send robotPose to network table
-        //Pose2d​(double x, double y, Rotation2d rotation)
-        //Rotation2d​(double value) value in degrees
-        posePublisher.set(new double[]{robotPosition[0], robotPosition[1], angle});
+        positionPublisher.set(new double[]{robotPosition[0], robotPosition[1], angle});
     }
 
     //PathPlanner - send ChassisSpeeds to network table
-    public void sendChassisSpeedstoNetwork() {
+    public void sendVelocitiestoNetwork() {
         //Get omega
         double omega = getOmega();
 
         //Send speeds to network table
-        //ChassisSpeeds​(double vxMetersPerSecond, double vyMetersPerSecond, double omegaDegreesPerSecond)
-        chassisPublisher.set(new double[]{robotVelocity[0], robotVelocity[1], omega});
+        velocityPublisher.set(new double[]{robotVelocity[0], robotVelocity[1], omega});
+    }
+
+    //PathPlanner - grab drive values from network table and drive the path
+    public void drivePath() {
+        boolean pathCompleted = completedPathSubscriber.get();
+        if (pathCompleted) {
+            return;
+        }
+
+        double xVel = xVelocitySubscriber.get();
+        double yVel = yVelocitySubscriber.get();
+        double omega = turnVelocitySubscriber.get();
+        double[] inputs = {xVel, -yVel, omega};
+        drive(inputs, new double[]{leftUpModule.getAbsoluteTurnPosition(), leftDownModule.getAbsoluteTurnPosition(), rightUpModule.getAbsoluteTurnPosition(), rightDownModule.getAbsoluteTurnPosition()},
+         getReducedAngle(), 0.25, 0.25);
     }
 }
