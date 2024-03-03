@@ -49,7 +49,7 @@ public class Launcher {
 
     public void prepLauncher(double speed) {
         backLauncher.set(Math.abs(speed - backLauncher.get()) > armConstants.motorAccelRates.backLauncher ? Math.signum(speed - backLauncher.get()) * armConstants.motorAccelRates.backLauncher : speed);
-        frontLauncher.set(-Math.abs(-speed - frontLauncher.get()) > armConstants.motorAccelRates.frontLauncher ? Math.signum(-speed - frontLauncher.get()) * armConstants.motorAccelRates.frontLauncher : 0);
+        frontLauncher.set(-Math.abs(-speed - frontLauncher.get()) > armConstants.motorAccelRates.frontLauncher ? Math.signum(-speed - frontLauncher.get()) * armConstants.motorAccelRates.frontLauncher : -speed);
 
         boolean backCorrect = Math.abs(backLauncher.get() - speed) < armConstants.launcherPrepTolerance;
         boolean frontCorrect = Math.abs(frontLauncher.get() + speed) < armConstants.launcherPrepTolerance;

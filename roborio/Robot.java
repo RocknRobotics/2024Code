@@ -7,8 +7,8 @@ package frc.robot;
 import com.revrobotics.CANSparkBase;
 
 import edu.wpi.first.wpilibj.PS4Controller;
+import edu.wpi.first.wpilibj.Relay;
 import edu.wpi.first.wpilibj.TimedRobot;
-import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
 
@@ -39,12 +39,11 @@ public class Robot extends TimedRobot {
 
   public static double fireFactor;
   public static double angleFactor;
+
+  //public Relay testAngleMotor;
     
   @Override
   public void robotInit() {
-    NetworkTableInstance inst = NetworkTableInstance.createInstance();
-    inst.startServer();
-    SmartDashboard.setNetworkTableInstance(inst);
     SmartDashboard.putString("Current mode: ", "robotInit");
 
     //Controller variables
@@ -66,6 +65,8 @@ public class Robot extends TimedRobot {
     angleFactor = 0.25;
 
     SmartDashboard.putString("Auto-Shoot Status: ", "DON'T FIRE YET");
+
+    //testAngleMotor = new Relay(0, Relay.Direction.kBoth);
   }
 
   //Every 20ms
@@ -116,9 +117,9 @@ public class Robot extends TimedRobot {
     if(armController.getPSButtonPressed()) {
       fireFactor = 0d;
     } else if(armController.getR2Button()) {
-      fireFactor = Math.min(1, fireFactor + 0.025);
+      fireFactor = Math.min(1, fireFactor + 0.001);
     } else if(armController.getR1Button()) {
-      fireFactor = Math.max(0.1, fireFactor - 0.025);
+      fireFactor = Math.max(0.1, fireFactor - 0.001);
     }
 
     //Accelerometer will need to be reset due to inaccuracies accumulating
@@ -189,7 +190,34 @@ public class Robot extends TimedRobot {
     myArmMaster.myLauncher.frontMiddleRoller.set(driveController.getRightY());*/
     /*myArmMaster.myLauncher.backLauncher.set(driveController.getLeftY());
     myArmMaster.myLauncher.frontLauncher.set(driveController.getRightY());*/
-    mySwerveMaster.leftDownModule.driveMotor.set(driveController.getLeftY());
+    //mySwerveMaster.leftDownModule.driveMotor.set(driveController.getLeftY());
+
+    /*if(driveController.getCrossButton()) {
+      //testAngleMotor.setDirection(Relay.Direction.kForward);
+      testAngleMotor.set(Relay.Value.kForward);
+    } else if(driveController.getSquareButton()) {
+      //testAngleMotor.setDirection(Relay.Direction.kReverse);
+      testAngleMotor.set(Relay.Value.kOn);
+    } else if(driveController.getTriangleButton()) {
+      //testAngleMotor.setDirection(Relay.Direction.kBoth);
+      testAngleMotor.set(Relay.Value.kOff);
+    } else if(driveController.getCircleButton()) {
+      //testAngleMotor.set(Relay.Value.kOn);
+      testAngleMotor.set(Relay.Value.kReverse);
+    }*/
+
+    if(armController.getSquareButton()) {
+      myHookMaster.leftHook.set(Relay.Value.kForward);
+    } else if(armController.getTriangleButton()) {
+      myHookMaster.rightHook.set(Relay.Value.kForward);
+    } else if(armController.getCircleButton()) {
+      myHookMaster.rightHook.set(Relay.Value.kReverse);
+    } else if(armController.getCrossButton()) {
+      myHookMaster.leftHook.set(Relay.Value.kReverse);
+    } else {
+      myHookMaster.leftHook.set(Relay.Value.kOff);
+      myHookMaster.rightHook.set(Relay.Value.kOff);
+    }
 
     SmartDashboard.putNumber("Drive Controller Left Y: ", driveController.getLeftY());
     SmartDashboard.putNumber("Drive Controller Right Y: ", driveController.getRightY());

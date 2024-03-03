@@ -172,9 +172,9 @@ public class ArmMaster {
             changeAngle(leftInput);
         }
 
-        if(armController.getR1Button()) {
+        if(armController.getPOV() == 180) {
             intake();
-        } else if(armController.getR2Button()) {
+        } else if(armController.getPOV() == 0) {
             fireLauncher();
         } 
 

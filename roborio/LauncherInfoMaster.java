@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import edu.wpi.first.wpilibj.Filesystem;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
 public class LauncherInfoMaster {
@@ -18,14 +19,16 @@ public class LauncherInfoMaster {
         launcherInfoList = new ArrayList<LauncherInfo>();
         
         try {
-            FileReader george = new FileReader("launcherExperimentData.txt");
+            FileReader george = new FileReader(Filesystem.getDeployDirectory().toString() + "/launcherExperimentData.txt");
             String fullFileString = "";
             int currChar = 0;
 
             while(currChar != -1) {
                 currChar = george.read();
-                fullFileString += String.valueOf(currChar);
+                fullFileString += String.valueOf((char) currChar);
             }
+
+            fullFileString = fullFileString.substring(0, fullFileString.length() - 1);
 
             launcherInfoStrings = new ArrayList<String>(Arrays.asList(fullFileString.split("!")));
 
@@ -41,7 +44,7 @@ public class LauncherInfoMaster {
                 String has1String = launcherInfoStrings.get(i).substring(launcherInfoStrings.get(i).indexOf("?") + 2, launcherInfoStrings.get(i).indexOf("?") + 3);
                 String has2String = launcherInfoStrings.get(i).substring(launcherInfoStrings.get(i).indexOf("?") + 3, launcherInfoStrings.get(i).indexOf("?") + 4);
 
-                launcherInfoList.set(i, new LauncherInfo(Double.valueOf(distanceString), 
+                launcherInfoList.add(new LauncherInfo(Double.valueOf(distanceString), 
                     new double[]{Double.valueOf(angle0String), Double.valueOf(angle1String), Double.valueOf(angle2String)}, 
                     new double[]{Double.valueOf(speed0String), Double.valueOf(speed1String), Double.valueOf(speed2String)},
                     new boolean[]{has0String.equals("Y"), has1String.equals("Y"), has2String.equals("Y")}));
@@ -171,7 +174,7 @@ public class LauncherInfoMaster {
 
     public void updateDataFile() {
         String fullFileString = "";
-        String filePath = "C:/launcherExperiment.txt"
+        String filePath = "C:/robotData/launcherExperimentData.txt";
         for(int i = 0; i < launcherInfoStrings.size(); i++) {
             fullFileString += launcherInfoStrings.get(i);
         }

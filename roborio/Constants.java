@@ -211,8 +211,8 @@ public final class Constants {
             public static final double rightHook = 0.2;
         }
 
-        public static final int leftHookID = 18;
-        public static final int rightHookID = 17;
+        public static final int leftHookID = 1;
+        public static final int rightHookID = 0;
 
         public static final boolean leftHookInverted = false;
         public static final boolean rightHookInverted = false;
@@ -220,7 +220,7 @@ public final class Constants {
         public static final double extensionSpeed = 0.1;//1;
 
         //The length of time (in milliseconds) it takes for the hooks to fully extend
-        public static final long extendTimeMillis = 1000;
+        public static final long extendTimeMillis = 17000;
     }
 
     public static final class gameConstants {
