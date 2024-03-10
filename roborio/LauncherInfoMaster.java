@@ -1,20 +1,26 @@
 package frc.robot;
 
 import java.io.FileReader;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.wpilibj.Filesystem;
+import edu.wpi.first.wpilibj.RobotController;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
 public class LauncherInfoMaster {
     public List<String> launcherInfoStrings;
     public List<LauncherInfo> launcherInfoList;
+    public String newData;
 
     public LauncherInfoMaster() {
+        /*NetworkTableInstance inst = NetworkTableInstance.create();
+        inst.startServer();
+        SmartDashboard.setNetworkTableInstance(inst);*/
+        
         launcherInfoStrings = new ArrayList<String>();
         launcherInfoList = new ArrayList<LauncherInfo>();
         
@@ -33,6 +39,8 @@ public class LauncherInfoMaster {
             launcherInfoStrings = new ArrayList<String>(Arrays.asList(fullFileString.split("!")));
 
             for(int i = 0; i < launcherInfoStrings.size(); i++) {
+                launcherInfoStrings.set(i, launcherInfoStrings.get(i).strip());
+                String voltageString = launcherInfoStrings.get(i).substring(launcherInfoStrings.get(i).indexOf("v:") + 2, launcherInfoStrings.get(i).indexOf("d:"));
                 String distanceString = launcherInfoStrings.get(i).substring(launcherInfoStrings.get(i).indexOf("d:") + 2, launcherInfoStrings.get(i).indexOf("a0:"));
                 String angle0String = launcherInfoStrings.get(i).substring(launcherInfoStrings.get(i).indexOf("a0:") + 3, launcherInfoStrings.get(i).indexOf("a1:"));
                 String angle1String = launcherInfoStrings.get(i).substring(launcherInfoStrings.get(i).indexOf("a1:") + 3, launcherInfoStrings.get(i).indexOf("a2:"));
@@ -44,7 +52,7 @@ public class LauncherInfoMaster {
                 String has1String = launcherInfoStrings.get(i).substring(launcherInfoStrings.get(i).indexOf("?") + 2, launcherInfoStrings.get(i).indexOf("?") + 3);
                 String has2String = launcherInfoStrings.get(i).substring(launcherInfoStrings.get(i).indexOf("?") + 3, launcherInfoStrings.get(i).indexOf("?") + 4);
 
-                launcherInfoList.add(new LauncherInfo(Double.valueOf(distanceString), 
+                launcherInfoList.add(new LauncherInfo(Integer.valueOf(voltageString), Double.valueOf(distanceString), 
                     new double[]{Double.valueOf(angle0String), Double.valueOf(angle1String), Double.valueOf(angle2String)}, 
                     new double[]{Double.valueOf(speed0String), Double.valueOf(speed1String), Double.valueOf(speed2String)},
                     new boolean[]{has0String.equals("Y"), has1String.equals("Y"), has2String.equals("Y")}));
@@ -54,50 +62,123 @@ public class LauncherInfoMaster {
         } catch(IOException e) {
             e.printStackTrace();
         }
+
+        newData = "";
     }
 
     public LauncherInfo get(double distance, int index) {
-        if(launcherInfoList.get(0).distance > distance) {
-            SmartDashboard.putString("Distance Range Status: ", "NOT YET");
-            return launcherInfoList.get(0);
-        } else if(launcherInfoList.get(launcherInfoList.size() - 1).distance < distance) {
-            SmartDashboard.putString("Distance Range Status: ", "NOT YET");
-            return launcherInfoList.get(launcherInfoList.size() - 1);
-        }
+        int currVoltage = (int) Math.round(RobotController.getBatteryVoltage() * 10);
+        int minVoltageIndex = 0;
+        int maxVoltageIndex = 0;
 
-        int bottomIndex = 0;
-
-        for(int i = 0; i < launcherInfoList.size(); i++) {
-            if(launcherInfoList.get(i).distance < distance) {
-                bottomIndex++;
-            }
-        }
-
-        if(launcherInfoList.get(bottomIndex).distance == distance) {
-            if(launcherInfoList.get(bottomIndex).has[index]) {
-                SmartDashboard.putString("Distance Range Status: ", "DISTANCE RANGE READY");
-            } else {
-                SmartDashboard.putString("Distance Range Status: ", "NOT YET");
-            }
-
-            return launcherInfoList.get(bottomIndex);
+        if(launcherInfoList.get(0).voltage > currVoltage) {
+            SmartDashboard.putString("Voltage Range Status: ", "NOT YET");
+        } else if(launcherInfoList.get(launcherInfoList.size() - 1).voltage < currVoltage) {
+            SmartDashboard.putString("Voltage Range Status: ", "NOT YET");
+            minVoltageIndex = launcherInfoList.size() - 1;
         } else {
-            if(launcherInfoList.get(bottomIndex).has[index]) {
-                SmartDashboard.putString("Distance Range Status: ", "DISTANCE RANGE READY");
-            } else {
-                SmartDashboard.putString("Distance Range Status: ", "NOT YET");
+            for(int i = 0; i < launcherInfoList.size(); i++) {
+                if(launcherInfoList.get(i).voltage < currVoltage) {
+                    minVoltageIndex++;
+                } else {
+                    break;
+                }
             }
 
-            return launcherInfoList.get(bottomIndex).interpolate(launcherInfoList.get(bottomIndex + 1), distance);
+            maxVoltageIndex = minVoltageIndex;
+
+            for(int i = minVoltageIndex; i < launcherInfoList.size() && launcherInfoList.get(i).voltage == launcherInfoList.get(minVoltageIndex).voltage; i++) {
+                maxVoltageIndex++;
+            }
+        }
+
+        if(launcherInfoList.get(minVoltageIndex).distance <= distance && launcherInfoList.get(maxVoltageIndex).distance >= distance) {
+            SmartDashboard.putString("Voltage Range Status: ", "VOLTAGE RANGE READY");
+            int bottomIndex = minVoltageIndex;
+
+            for(int i = bottomIndex; i <= maxVoltageIndex && launcherInfoList.get(i).distance <= distance; i++) {
+                if(launcherInfoList.get(i).distance < distance) {
+                    bottomIndex++;
+                }
+            }
+
+            if(launcherInfoList.get(bottomIndex).distance == distance) {
+                if(launcherInfoList.get(bottomIndex).has[index]) {
+                    SmartDashboard.putString("Distance Range Status: ", "DISTANCE RANGE READY");
+                } else {
+                    SmartDashboard.putString("Distance Range Status: ", "NOT YET");
+                }
+
+                return launcherInfoList.get(bottomIndex);
+            } else {
+                LauncherInfo temp = launcherInfoList.get(bottomIndex).interpolateDistance(launcherInfoList.get(bottomIndex + 1), distance);
+
+                if(temp.has[index]) {
+                    SmartDashboard.putString("Distance Range Status: ", "DISTANCE RANGE READY");
+                } else {
+                    SmartDashboard.putString("Distance Range Status: ", "NOT YET");
+                }
+
+                return temp;
+            }
+        } else {
+            if(maxVoltageIndex + 1 < launcherInfoList.size() && minVoltageIndex - 1 >= 0 && launcherInfoList.get(maxVoltageIndex + 1).distance <= distance && launcherInfoList.get(minVoltageIndex - 1).distance >= distance) {
+                int upperIndex = maxVoltageIndex + 1;
+
+                for(int i = maxVoltageIndex + 1; i < launcherInfoList.size() && launcherInfoList.get(i).voltage == launcherInfoList.get(maxVoltageIndex + 1).voltage && launcherInfoList.get(i).distance <= distance; i++) {
+                    if(launcherInfoList.get(i).distance < distance) {
+                        upperIndex++;
+                    }
+                }
+
+                int lowerIndex = minVoltageIndex - 1;
+
+                for(int i = minVoltageIndex - 1; i >= 0 && launcherInfoList.get(i).voltage == launcherInfoList.get(minVoltageIndex - 1).voltage && launcherInfoList.get(i).distance >= distance; i--) {
+                    if(launcherInfoList.get(i).distance > distance) {
+                        lowerIndex++;
+                    }
+                }
+
+                LauncherInfo temp = launcherInfoList.get(lowerIndex).interpolateVoltage(launcherInfoList.get(upperIndex), currVoltage);
+
+                if(Math.abs(temp.distance - distance) <= 0.05 && temp.has[index]) {
+                    SmartDashboard.putString("Voltage Range Status: ", "VOLTAGE RANGE READY");
+                    SmartDashboard.putString("Distance Range Status: ", "DISTANCE RANGE READY");
+                } else {
+                    SmartDashboard.putString("Voltage Range Status: ", "NOT YET");
+                    SmartDashboard.putString("Distance Range Status: ", "NOT YET");
+                }
+
+                return temp;
+            } else {
+                SmartDashboard.putString("Voltage Range Status: ", "NOT YET");
+                SmartDashboard.putString("Distance Range Status: ", "NOT YET");
+
+                if(maxVoltageIndex + 1 >= launcherInfoList.size() || launcherInfoList.get(maxVoltageIndex + 1).distance > distance) {
+                    return launcherInfoList.get(maxVoltageIndex);
+                } else {
+                    return launcherInfoList.get(minVoltageIndex);
+                }
+            }
         }
     }
 
-    public void storeSpeaker(double distance, double angle, double speed) {
-        String launcherString = "d:" + distance + "a0:" + angle + "a1:0a2:0s0:" + speed + "s1:0s2:0?YNN!";
-        LauncherInfo actualInfo = new LauncherInfo(distance, new double[]{angle, 0d, 0d}, new double[]{speed, 0d, 0d}, new boolean[]{true, false, false});
-        int index = 0;
+    public void storeSpeaker(int voltage, double distance, double angle, double speed) {
+        String launcherString = "v:" + voltage + "d:" + distance + "a0:" + angle + "a1:0a2:0s0:" + speed + "s1:0s2:0?YNN!";
+        LauncherInfo actualInfo = new LauncherInfo(voltage, distance, new double[]{angle, 0d, 0d}, new double[]{speed, 0d, 0d}, new boolean[]{true, false, false});
+        int voltageIndex = 0;
 
-        for(int i = 0; i < launcherInfoStrings.size() && launcherInfoList.get(i).distance <= distance; i++) {
+        for(int j = 0; j < launcherInfoStrings.size() && launcherInfoList.get(j).voltage <= voltage; j++) {
+            if(launcherInfoList.get(j).voltage == voltage) {
+                break;
+            }
+
+            voltageIndex++;
+        }
+
+        int index = voltageIndex;
+
+        for(int i = voltageIndex; i < launcherInfoStrings.size() && launcherInfoList.get(i).distance <= distance && launcherInfoList.get(i).voltage == launcherInfoList.get(voltageIndex).voltage; i++) {
             if(launcherInfoList.get(i).distance == distance) {
                 actualInfo = launcherInfoList.get(i);
                 actualInfo.angles[0] = angle;
@@ -117,14 +198,25 @@ public class LauncherInfoMaster {
 
         launcherInfoStrings.add(index, launcherString);
         launcherInfoList.add(index, actualInfo);
+        newData += launcherInfoStrings.get(index) + "\n";
     }
 
-    public void storeAmp(double distance, double angle, double speed) {
-        String launcherString = "d:" + distance + "a0:0a1:" + angle + "a2:0s0:0s1:" + speed + "s2:0?NYN!";
-        LauncherInfo actualInfo = new LauncherInfo(distance, new double[]{0d, angle, 0d}, new double[]{0d, speed, 0d}, new boolean[]{false, true, false});
-        int index = 0;
+    public void storeAmp(int voltage, double distance, double angle, double speed) {
+        String launcherString = "v:" + voltage + "d:" + distance + "a0:0a1:" + angle + "a2:0s0:0s1:" + speed + "s2:0?NYN!";
+        LauncherInfo actualInfo = new LauncherInfo(voltage, distance, new double[]{0d, angle, 0d}, new double[]{0d, speed, 0d}, new boolean[]{false, true, false});
+        int voltageIndex = 0;
 
-        for(int i = 0; i < launcherInfoStrings.size() && launcherInfoList.get(i).distance <= distance; i++) {
+        for(int j = 0; j < launcherInfoStrings.size() && launcherInfoList.get(j).voltage <= voltage; j++) {
+            if(launcherInfoList.get(j).voltage == voltage) {
+                break;
+            }
+
+            voltageIndex++;
+        }
+
+        int index = voltageIndex;
+
+        for(int i = 0; i < launcherInfoStrings.size() && launcherInfoList.get(i).distance <= distance && launcherInfoList.get(i).voltage == launcherInfoList.get(voltageIndex).voltage; i++) {
             if(launcherInfoList.get(i).distance == distance) {
                 actualInfo = launcherInfoList.get(i);
                 actualInfo.angles[1] = angle;
@@ -144,14 +236,25 @@ public class LauncherInfoMaster {
 
         launcherInfoStrings.add(index, launcherString);
         launcherInfoList.add(index, actualInfo);
+        newData += launcherInfoStrings.get(index) + "\n";
     }
 
-    public void storeTrap(double distance, double angle, double speed) {
-        String launcherString = "d:" + distance + "a0:0a1:0a2:" + angle + "s0:0s1:0s2:" + speed + "?NNY!";
-        LauncherInfo actualInfo = new LauncherInfo(distance, new double[]{0d, 0d, angle}, new double[]{0d, 0d, speed}, new boolean[]{false, false, true});
-        int index = 0;
+    public void storeTrap(int voltage, double distance, double angle, double speed) {
+        String launcherString = "v:" + voltage + "d:" + distance + "a0:0a1:0a2:" + angle + "s0:0s1:0s2:" + speed + "?NNY!";
+        LauncherInfo actualInfo = new LauncherInfo(voltage, distance, new double[]{0d, 0d, angle}, new double[]{0d, 0d, speed}, new boolean[]{false, false, true});
+        int voltageIndex = 0;
 
-        for(int i = 0; i < launcherInfoStrings.size() && launcherInfoList.get(i).distance <= distance; i++) {
+        for(int j = 0; j < launcherInfoStrings.size() && launcherInfoList.get(j).voltage <= voltage; j++) {
+            if(launcherInfoList.get(j).voltage == voltage) {
+                break;
+            }
+
+            voltageIndex++;
+        }
+
+        int index = voltageIndex;
+
+        for(int i = 0; i < launcherInfoStrings.size() && launcherInfoList.get(i).distance <= distance && launcherInfoList.get(i).voltage == launcherInfoList.get(voltageIndex).voltage; i++) {
             if(launcherInfoList.get(i).distance == distance) {
                 actualInfo = launcherInfoList.get(i);
                 actualInfo.angles[2] = angle;
@@ -170,32 +273,19 @@ public class LauncherInfoMaster {
 
         launcherInfoStrings.add(index, launcherString);
         launcherInfoList.add(index, actualInfo);
+        newData += launcherInfoStrings.get(index) + "\n";
     }
 
     public void updateDataFile() {
-        String fullFileString = "";
+        /*String fullFileString = "";
         String filePath = "C:/robotData/launcherExperimentData.txt";
         for(int i = 0; i < launcherInfoStrings.size(); i++) {
-            fullFileString += launcherInfoStrings.get(i);
+            fullFileString += launcherInfoStrings.get(i) + "\n";
         }
 
         SmartDashboard.putString("File Write Path", filePath);
-        SmartDashboard.putString("File Write Contents", fullFileString);
-        /* 
-        try {
-
-            FileWriter george = new FileWriter("launcherExperimentData.txt", false);
-            String fullFileString = "";
-
-            for(int i = 0; i < launcherInfoStrings.size(); i++) {
-                fullFileString += launcherInfoStrings.get(i);
-            }
-
-            george.write(fullFileString);
-            george.close();
-        } catch(IOException e) {
-            e.printStackTrace();
-        }
-        */
+        SmartDashboard.putString("File Write Contents", fullFileString);*/
+        SmartDashboard.putString("File Write Contents", newData);
+        newData = "";
     }
 }

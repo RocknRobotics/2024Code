@@ -1,9 +1,8 @@
 package frc.robot;
 
-import com.revrobotics.CANSparkMax;
-import com.revrobotics.CANSparkLowLevel.MotorType;
+import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.wpilibj.Relay;
-
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.robot.Constants.hookConstants;
 
 public class HookMaster {
@@ -14,6 +13,10 @@ public class HookMaster {
     public boolean timeFulfilled;
 
     public HookMaster() {
+        /*NetworkTableInstance inst = NetworkTableInstance.create();
+        inst.startServer();
+        SmartDashboard.setNetworkTableInstance(inst);*/
+        
         leftHook = new Relay(hookConstants.leftHookID, Relay.Direction.kBoth);
         rightHook = new Relay(hookConstants.rightHookID, Relay.Direction.kBoth);
 
@@ -25,14 +28,14 @@ public class HookMaster {
 
     //returns false while count < hookConstants.countsTillTop
     public void extend() {
-        leftHook.set(Relay.Value.kForward); //Might need to switch forward and reverse
-        rightHook.set(Relay.Value.kForward);
+        leftHook.set(Relay.Value.kReverse); //Might need to switch forward and reverse
+        rightHook.set(Relay.Value.kReverse);
     }
 
     //returns false while count < hookConstants.countsTillTop
     public void retract() {
-        leftHook.set(Relay.Value.kReverse);
-        rightHook.set(Relay.Value.kReverse);
+        leftHook.set(Relay.Value.kForward);
+        rightHook.set(Relay.Value.kForward);
     }
 
     public void stop() {
@@ -40,8 +43,15 @@ public class HookMaster {
         rightHook.set(Relay.Value.kOff);
     }
 
-    public void update(boolean shareButtonPressed) {
-        if(shareButtonPressed) {
+    public void update(int drivePov) {
+        if(drivePov == 0) {
+            extend();
+        } else if(drivePov == 180) {
+            retract();
+        } else {
+            stop();
+        }
+        /*if(shareButtonPressed) {
             startMillis = System.currentTimeMillis();
 
             if(extended) {
@@ -63,6 +73,6 @@ public class HookMaster {
             } else {
                 retract();
             }
-        }
+        }*/
     }
 }

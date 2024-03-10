@@ -51,12 +51,13 @@ public class SwerveMaster {
 
     //PathPlanner - Network tables
     private NetworkTableInstance jetsonClient;
-    private DoubleArrayPublisher velocityPublisher;
-    private DoubleArrayPublisher positionPublisher;
-    private DoubleSubscriber xVelocitySubscriber;   
-    private DoubleSubscriber yVelocitySubscriber;
-    private DoubleSubscriber turnVelocitySubscriber;
-    private BooleanSubscriber completedPathSubscriber;
+    private DoubleArrayPublisher chassisPublisher;
+    private DoubleArrayPublisher posePublisher;
+    private DoubleArraySubscriber poseSubscriber;
+    private BooleanSubscriber poseBooleanSubscriber;
+    private DoubleArraySubscriber ChassisSpeedsSubscriber;
+    private BooleanSubscriber ChassisSpeedsBooleanSubscriber;
+    
 
     //PathPlanner - True if path planner is controlling robot, cancels controller
     boolean pathing = false;
@@ -65,6 +66,10 @@ public class SwerveMaster {
 
     //Constructor
     public SwerveMaster() {
+        /*NetworkTableInstance inst = NetworkTableInstance.create();
+        inst.startServer();
+        SmartDashboard.setNetworkTableInstance(inst);*/
+        
         //Create swerve module objects
         leftUpModule = new SwerveModule(driveConstants.leftUpID, turnConstants.leftUpID, turnConstants.leftUpEncoderID, driveConstants.leftUpInvert, 
         turnConstants.leftUpInvert, turnConstants.leftUpEncoderInvert, turnConstants.leftUpOffset, driveConstants.motorAccelRates.leftUp, turnConstants.motorAccelRates.leftUp);
@@ -117,13 +122,14 @@ public class SwerveMaster {
         jetsonClient.startClient4("roboRio");
 
         //Publishers and subscribers
-        velocityPublisher = jetsonClient.getDoubleArrayTopic("/roborio/swervemaster/startVel").publish();
-        positionPublisher = jetsonClient.getDoubleArrayTopic("/roborio/swervemaster/startPos").publish();
-        xVelocitySubscriber = jetsonClient.getDoubleTopic("/roborio/swervemaster/pathVelocitiesX").subscribe(0);
-        yVelocitySubscriber = jetsonClient.getDoubleTopic("/roborio/swervemaster/pathVelocitiesY").subscribe(0);
-        turnVelocitySubscriber = jetsonClient.getDoubleTopic("/roborio/swervemaster/pathVelocitiesOmega").subscribe(0);
-        completedPathSubscriber = jetsonClient.getBooleanTopic("/roborio/swervemaster/pathCompleted").subscribe(true);
-        
+        chassisPublisher = jetsonClient.getDoubleArrayTopic("/roborio/swervemaster/chassis").publish();
+        posePublisher = jetsonClient.getDoubleArrayTopic("/roborio/swervemaster/pose").publish();
+        /*poseSubscriber = jetsonClient.getDoubleArrayTopic("/roborio/swervemaster/resetPoseArray").subscribe(new double[]{0, 0, 0}, null);
+        poseBooleanSubscriber = jetsonClient.getBooleanTopic("/roborio/swervemaster/resetPoseBoolean").subscribe(false, null);
+        ChassisSpeedsSubscriber = jetsonClient.getDoubleArrayTopic("/roborio/swervemaster/setChassisSpeeds").subscribe(new double[]{0, 0, 0}, null);
+        ChassisSpeedsBooleanSubscriber = jetsonClient.getBooleanTopic("/roborio/swervemaster/setChassisSpeedsBoolean").subscribe(false, null);
+*/
+
         blue = DriverStation.getAlliance().get() == DriverStation.Alliance.Blue;
 
         SmartDashboard.putString("Heading Status: ", "NOT YET");
@@ -330,6 +336,10 @@ public class SwerveMaster {
         double driveSets[] = new double[]{0d, 0d, 0d, 0d};
         double turnSets[] = new double[]{0d, 0d, 0d, 0d};
 
+        /*if(inputs[2] == 0) {
+            inputs[2] = 0.015;
+        }*/
+
         //Adjust inputs to account for drift while driving and turning
         double adjustedX = inputs[0] / (Math.abs(inputs[1]) + Math.abs(inputs[2]) + 1);
         double adjustedY = -inputs[1] / (Math.abs(inputs[0]) + Math.abs(inputs[2]) + 1);
@@ -428,33 +438,38 @@ public class SwerveMaster {
             int driveSetInvert = 1;
 
             //turnPIDController takes into account the wrap from 0 to 360, so using it when calculating whether
-            // it's optimal to add/subtract 180 for reversing actually results in it at most turning 90 
-            if(Math.abs(turnPIDController.calculate(positions[i], desiredAngle[i])) >= Math.abs(turnPIDController.calculate(positions[i], desiredAngle[i] + 180))) {
+            // it's optimal to add/subtract 180 for reversing actually results in it at most turning 90
+            double anglePlus = desiredAngle[i] + 180;
+            double angleMinus = desiredAngle[i] - 180;
+            anglePlus = anglePlus > 360 ? anglePlus - 360 : anglePlus;
+            angleMinus = angleMinus <= 0 ? angleMinus + 360 : angleMinus;
+            if(Math.abs(turnPIDController.calculate(-positions[i], desiredAngle[i])) >= Math.abs(turnPIDController.calculate(-positions[i], anglePlus))) {
                 driveSetInvert = -1;
-                turnSets[i] = turnPIDController.calculate(positions[i], desiredAngle[i] + 180) / 360d;
+                turnSets[i] = turnPIDController.calculate(-positions[i], anglePlus) / 360d;
 
-                if (Math.abs(turnPIDController.calculate(positions[i], desiredAngle[i] + 180)) > driveConstants.angleTolerance) {
+                if (Math.abs(turnPIDController.calculate(-positions[i], anglePlus)) > driveConstants.angleTolerance) {
                     driveSetInvert = 0;
                 }
-            } else if(Math.abs(turnPIDController.calculate(positions[i], desiredAngle[i])) >= Math.abs(turnPIDController.calculate(positions[i], desiredAngle[i] - 180))) {
+            } else if(Math.abs(turnPIDController.calculate(-positions[i], desiredAngle[i])) >= Math.abs(turnPIDController.calculate(-positions[i], angleMinus))) {
                 driveSetInvert = -1;
-                turnSets[i] = turnPIDController.calculate(positions[i], desiredAngle[i] - 180) / 360d;
+                turnSets[i] = turnPIDController.calculate(-positions[i], angleMinus) / 360d;
 
-                if (Math.abs(turnPIDController.calculate(positions[i], desiredAngle[i] - 180)) > driveConstants.angleTolerance) {
+                if (Math.abs(turnPIDController.calculate(-positions[i], angleMinus)) > driveConstants.angleTolerance) {
                     driveSetInvert = 0;
                 }
             } else {
-                turnSets[i] = turnPIDController.calculate(positions[i], desiredAngle[i]) / 360d;
+                turnSets[i] = turnPIDController.calculate(-positions[i], desiredAngle[i]) / 360d;
 
-                if (Math.abs(turnPIDController.calculate(positions[i], desiredAngle[i])) > driveConstants.angleTolerance) {
+                if (Math.abs(turnPIDController.calculate(-positions[i], desiredAngle[i])) > driveConstants.angleTolerance) {
                     driveSetInvert = 0;
                 }
             }
+
             //Invert wheel if optimized
             driveSets[i] = driveSetInvert * -desiredMagnitude[i];
             
             //Debugging purposes
-            /*SmartDashboard.putNumber("Trans Ang " + i + ": ", translationalAngles[i]);
+            SmartDashboard.putNumber("Trans Ang " + i + ": ", translationalAngles[i]);
             SmartDashboard.putNumber("Trans Mag " + i + ": ", translationalMagnitude[i]);
             SmartDashboard.putNumber("Rot Ang " + i + ": ", rotationalAngles[i]);
             SmartDashboard.putNumber("Rot Mag " + i + ": ", rotationalMagnitude[i]);
@@ -463,7 +478,7 @@ public class SwerveMaster {
             SmartDashboard.putNumber("Desired Ang " + i + ": ", desiredAngle[i]);
             SmartDashboard.putNumber("Desired Mag " + i + ": ", desiredMagnitude[i]);
             SmartDashboard.putNumber("Turn Set " + i + ": ", turnSets[i]);
-            SmartDashboard.putNumber("Drive Set " + i + ": ", driveSets[i]);*/
+            SmartDashboard.putNumber("Drive Set " + i + ": ", driveSets[i]);
         }
 
         //Odometry - Update the position of the robot using the angle the robot is facing
@@ -476,8 +491,9 @@ public class SwerveMaster {
         SmartDashboard.putNumber("Robot Y", robotPosition[1]);
 
         //Pathplanner - Send information to network table
-        sendPositiontoNetwork();
-        sendVelocitiestoNetwork();
+        sendPose2dtoNetwork();
+        sendChassisSpeedstoNetwork();
+        //jetsonClient.flush();
 
         //Set the wheel speeds
         set(driveSets, turnSets);
@@ -610,35 +626,23 @@ public class SwerveMaster {
 
      
     //PathPlanner - send Pose2d to network table
-    public void sendPositiontoNetwork() {
+    public void sendPose2dtoNetwork() {
         //Get current angle
         double angle = getReducedAngle();
 
         //Send robotPose to network table
-        positionPublisher.set(new double[]{robotPosition[0], robotPosition[1], angle});
+        //Pose2d​(double x, double y, Rotation2d rotation)
+        //Rotation2d​(double value) value in degrees
+        posePublisher.set(new double[]{robotPosition[0], robotPosition[1], angle});
     }
 
     //PathPlanner - send ChassisSpeeds to network table
-    public void sendVelocitiestoNetwork() {
+    public void sendChassisSpeedstoNetwork() {
         //Get omega
         double omega = getOmega();
 
         //Send speeds to network table
-        velocityPublisher.set(new double[]{robotVelocity[0], robotVelocity[1], omega});
-    }
-
-    //PathPlanner - grab drive values from network table and drive the path
-    public void drivePath() {
-        boolean pathCompleted = completedPathSubscriber.get();
-        if (pathCompleted) {
-            return;
-        }
-
-        double xVel = xVelocitySubscriber.get();
-        double yVel = yVelocitySubscriber.get();
-        double omega = turnVelocitySubscriber.get();
-        double[] inputs = {xVel, -yVel, omega};
-        drive(inputs, new double[]{leftUpModule.getAbsoluteTurnPosition(), leftDownModule.getAbsoluteTurnPosition(), rightUpModule.getAbsoluteTurnPosition(), rightDownModule.getAbsoluteTurnPosition()},
-         getReducedAngle(), 0.25, 0.25);
+        //ChassisSpeeds​(double vxMetersPerSecond, double vyMetersPerSecond, double omegaDegreesPerSecond)
+        chassisPublisher.set(new double[]{robotVelocity[0], robotVelocity[1], omega});
     }
 }

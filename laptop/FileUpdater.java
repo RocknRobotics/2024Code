@@ -8,12 +8,11 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
 //This class is necessary since I don't think the roboRio can communicate the updated files back to the computer
 public class FileUpdater {
-
     public static void initialization(boolean runThis) {
         if(runThis) {
             NetworkTableInstance inst = NetworkTableInstance.create();
             inst.startClient4("laptopFileClient");
-            inst.setServer("10.36.92.2", NetworkTableInstance.kDefaultPort4);
+            inst.setServer("10.36.92.20", NetworkTableInstance.kDefaultPort4);
             SmartDashboard.setNetworkTableInstance(inst);
 
             SmartDashboard.putString("File Write Contents", "");

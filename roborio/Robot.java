@@ -4,10 +4,10 @@
 
 package frc.robot;
 
-import com.revrobotics.CANSparkBase;
-
+import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.wpilibj.PS4Controller;
 import edu.wpi.first.wpilibj.Relay;
+import edu.wpi.first.wpilibj.RobotController;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
@@ -44,6 +44,9 @@ public class Robot extends TimedRobot {
     
   @Override
   public void robotInit() {
+    /*NetworkTableInstance inst = NetworkTableInstance.create();
+    inst.startServer();
+    SmartDashboard.setNetworkTableInstance(inst);*/
     SmartDashboard.putString("Current mode: ", "robotInit");
 
     //Controller variables
@@ -77,6 +80,7 @@ public class Robot extends TimedRobot {
     SmartDashboard.putNumber("LD Angle: ", mySwerveMaster.leftDownModule.getAbsoluteTurnPosition());
     SmartDashboard.putNumber("RU Angle: ", mySwerveMaster.rightUpModule.getAbsoluteTurnPosition());
     SmartDashboard.putNumber("RD Angle: ", mySwerveMaster.rightDownModule.getAbsoluteTurnPosition());
+    SmartDashboard.putNumber("Current Battery Voltage: ", Math.round(RobotController.getBatteryVoltage() * 10) / 10d);
   }
 
   @Override
@@ -93,33 +97,33 @@ public class Robot extends TimedRobot {
     if(driveController.getTouchpadPressed()) {
       driveControllerFactor = 0d;
     } else if(driveController.getL2Button()) {
-      driveControllerFactor = Math.min(1, driveControllerFactor + 0.025);
+      driveControllerFactor = Math.min(1, driveControllerFactor + 0.01);
     } else if(driveController.getL1Button()) {
-      driveControllerFactor = Math.max(0.1, driveControllerFactor - 0.025);
+      driveControllerFactor = Math.max(0.1, driveControllerFactor - 0.01);
     }
 
     if(driveController.getPSButtonPressed()) {
       turnFactor = 0d;
     } else if(driveController.getR2Button()) {
-      turnFactor = Math.min(1, turnFactor + 0.025);
+      turnFactor = Math.min(1, turnFactor + 0.01);
     } else if(driveController.getR1Button()) {
-      turnFactor = Math.max(0.1, turnFactor - 0.025);
+      turnFactor = Math.max(0.1, turnFactor - 0.01);
     }
 
     if(armController.getTouchpadPressed()) {
       angleFactor = 0d;
     } else if(armController.getL2Button()) {
-      angleFactor = Math.min(1, angleFactor + 0.025);
+      angleFactor = Math.min(1, angleFactor + 0.01);
     } else if(armController.getL1Button()) {
-      angleFactor = Math.max(0.1, angleFactor - 0.025);
+      angleFactor = Math.max(0.1, angleFactor - 0.01);
     }
 
     if(armController.getPSButtonPressed()) {
       fireFactor = 0d;
     } else if(armController.getR2Button()) {
-      fireFactor = Math.min(1, fireFactor + 0.001);
+      fireFactor = Math.min(1.25, fireFactor + 0.01);
     } else if(armController.getR1Button()) {
-      fireFactor = Math.max(0.1, fireFactor - 0.001);
+      fireFactor = Math.max(0.1, fireFactor - 0.01);
     }
 
     //Accelerometer will need to be reset due to inaccuracies accumulating
@@ -128,7 +132,7 @@ public class Robot extends TimedRobot {
       mySwerveMaster.resetPose(0, 0, 0);
     }
 
-    myHookMaster.update(armController.getShareButtonPressed());
+    myHookMaster.update(driveController.getPOV());
     myArmMaster.update(armController, mySwerveMaster.getRobotPosition()[0], mySwerveMaster.getRobotPosition()[1]);
 
     //Controller Smart Dashboard values
@@ -150,7 +154,8 @@ public class Robot extends TimedRobot {
       SmartDashboard.getString("Heading Status: ", "NOT YET").equals("HEADING READY") && 
       SmartDashboard.getString("Arm Angle Status: ", "NOT YET").equals("ARM ANGLE READY") && 
       SmartDashboard.getString("Distance Range Status: ", "NOT YET").equals("DISTANCE RANGE READY") && 
-      SmartDashboard.getString("Angle Range Status: ", "NOT YET").equals("ANGLE RANGE READY")) {
+      SmartDashboard.getString("Angle Range Status: ", "NOT YET").equals("ANGLE RANGE READY") && 
+      SmartDashboard.getString("Voltage Range Status: ", "NOT YET").equals("VOLTAGE RANGE READY")) {
         SmartDashboard.putString("Auto-Shoot Status: ", "ALL SYSTEMS GO!!!");
       } else {
         SmartDashboard.putString("Auto-Shoot Status: ", "DON'T FIRE YET");
@@ -179,11 +184,11 @@ public class Robot extends TimedRobot {
     mySwerveMaster.rightUpModule.driveMotor.set(driveController.getLeftY());
     mySwerveMaster.rightDownModule.driveMotor.set(driveController.getRightY());*/
     /*mySwerveMaster.leftUpModule.turnMotor.set(driveController.getLeftY());
-    mySwerveMaster.leftDownModule.turnMotor.set(driveController.getRightY());
-    mySwerveMaster.rightUpModule.turnMotor.set(driveController.getLeftY());
+    mySwerveMaster.leftDownModule.turnMotor.set(driveController.getRightY());*/
+    /*mySwerveMaster.rightUpModule.turnMotor.set(driveController.getLeftY());
     mySwerveMaster.rightDownModule.turnMotor.set(driveController.getRightY());*/
-    /*myArmMaster.launcherAngle.set(driveController.getLeftY());
-    myArmMaster.myIntake.groundRoller.set(driveController.getRightY());*/
+    //myArmMaster.launcherAngle.set(driveController.getLeftY());
+    //myArmMaster.myIntake.groundRoller.set(driveController.getRightY());
     /*myArmMaster.myIntake.bottomIntake.set(driveController.getLeftY());
     myArmMaster.myIntake.topIntake.set(driveController.getRightY());*/
     /*myArmMaster.myLauncher.backMiddleRoller.set(driveController.getLeftY());
@@ -191,6 +196,7 @@ public class Robot extends TimedRobot {
     /*myArmMaster.myLauncher.backLauncher.set(driveController.getLeftY());
     myArmMaster.myLauncher.frontLauncher.set(driveController.getRightY());*/
     //mySwerveMaster.leftDownModule.driveMotor.set(driveController.getLeftY());
+    mySwerveMaster.leftUpModule.driveMotor.set(Math.abs(driveController.getLeftY()) < Constants.driveControllerStopBelowThis ? 0 : driveController.getLeftY());
 
     /*if(driveController.getCrossButton()) {
       //testAngleMotor.setDirection(Relay.Direction.kForward);
@@ -207,13 +213,13 @@ public class Robot extends TimedRobot {
     }*/
 
     if(armController.getSquareButton()) {
-      myHookMaster.leftHook.set(Relay.Value.kForward);
-    } else if(armController.getTriangleButton()) {
-      myHookMaster.rightHook.set(Relay.Value.kForward);
-    } else if(armController.getCircleButton()) {
-      myHookMaster.rightHook.set(Relay.Value.kReverse);
-    } else if(armController.getCrossButton()) {
       myHookMaster.leftHook.set(Relay.Value.kReverse);
+    } else if(armController.getTriangleButton()) {
+      myHookMaster.rightHook.set(Relay.Value.kReverse);
+    } else if(armController.getCircleButton()) {
+      myHookMaster.rightHook.set(Relay.Value.kForward);
+    } else if(armController.getCrossButton()) {
+      myHookMaster.leftHook.set(Relay.Value.kForward);
     } else {
       myHookMaster.leftHook.set(Relay.Value.kOff);
       myHookMaster.rightHook.set(Relay.Value.kOff);

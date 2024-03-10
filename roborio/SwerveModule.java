@@ -6,7 +6,9 @@ import com.revrobotics.CANSparkLowLevel.MotorType;
 
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
+import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.wpilibj.AnalogEncoder;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.robot.Constants.motorConstants.*;
 //import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
@@ -35,6 +37,10 @@ public class SwerveModule {
     private double turnMaxAccel;
 
     public SwerveModule(int driveMotorID, int turnMotorID, int turnEncoderID, boolean driveMotorInvert, boolean turnMotorInvert, boolean encoderInvert, double offsetAngle, double driveMaxAccel, double turnMaxAccel) {
+        /*NetworkTableInstance inst = NetworkTableInstance.create();
+        inst.startServer();
+        SmartDashboard.setNetworkTableInstance(inst);*/
+        
         driveMotor = new CANSparkMax(driveMotorID, MotorType.kBrushless);
         turnMotor = new CANSparkMax(turnMotorID, MotorType.kBrushless);
         driveRelative = driveMotor.getEncoder();
@@ -61,8 +67,10 @@ public class SwerveModule {
 
     //Set drive and turn motors
     public void set(double driveSet, double turnSet) {
-        driveMotor.set(Math.abs(driveSet - driveMotor.get()) > driveMaxAccel ? Math.signum(driveSet - driveMotor.get()) * driveMaxAccel : driveSet);
-        turnMotor.set(Math.abs(turnSet - turnMotor.get()) > turnMaxAccel ? Math.signum(turnSet - turnMotor.get()) * turnMaxAccel : turnSet);
+        driveMotor.set(Math.abs(driveSet - driveMotor.get()) > driveMaxAccel ? Math.signum(driveSet - driveMotor.get()) * driveMaxAccel + driveMotor.get() : driveSet);
+        turnMotor.set(Math.abs(turnSet - turnMotor.get()) > turnMaxAccel ? Math.signum(turnSet - turnMotor.get()) * turnMaxAccel + turnMotor.get() : turnSet);
+        /*driveMotor.set(driveSet);
+        turnMotor.set(turnSet);*/
     }
 
     //Metres position of the drive talon
@@ -72,7 +80,7 @@ public class SwerveModule {
 
     // Degrees position of the turn talon
     public double getAbsoluteTurnPosition() {
-        double temp = -(180 + encoderInvert * (turnEncoder.getAbsolutePosition()) * turnConstants.degreesPerRotation - encoderOffset);
+        double temp = -(180 + encoderInvert * (turnEncoder.getAbsolutePosition()) * turnConstants.degreesPerRotation + encoderOffset);
 
         while(temp <= 0) {
             temp += 360;

@@ -35,10 +35,10 @@ public final class Constants {
             public static final class motorAccelRates {
                 //Ranges from 0 to 2
                 //The max percentage acceleration allowed within a periodic tick
-                public static final double leftUp = 0.5;
-                public static final double leftDown = 0.5;
-                public static final double rightUp = 0.5;
-                public static final double rightDown = 0.5;
+                public static final double leftUp = 0.2;
+                public static final double leftDown = 0.2;
+                public static final double rightUp = 0.2;
+                public static final double rightDown = 0.2;
             }
 
             //PID controller position constant
@@ -53,10 +53,10 @@ public final class Constants {
             public static final double degreesPerRotation = 360 * radsPerRotation / (2 * Math.PI);
 
             //IDs of turn motors
-            public static final int leftUpID = 3;
-            public static final int leftDownID = 5;
-            public static final int rightUpID = 1;
-            public static final int rightDownID = 7;
+            public static final int leftUpID = 1;
+            public static final int leftDownID = 7;
+            public static final int rightUpID = 3;
+            public static final int rightDownID = 5;
 
             //Invert turn wheels
             public static final boolean leftUpInvert = false;
@@ -65,16 +65,16 @@ public final class Constants {
             public static final boolean rightDownInvert = false;
 
             //IDs of turn encoders
-            public static final int leftUpEncoderID = 3;
-            public static final int leftDownEncoderID = 1;
-            public static final int rightUpEncoderID = 2;
-            public static final int rightDownEncoderID = 0;
+            public static final int leftUpEncoderID = 0;
+            public static final int leftDownEncoderID = 2;
+            public static final int rightUpEncoderID = 1;
+            public static final int rightDownEncoderID = 3;
 
             //Encoder offsets---the values of the encoders when the module is in the "0" position (facing forward)
-            public static final double leftUpOffset = 82.8;
-            public static final double leftDownOffset = 53.9;
-            public static final double rightUpOffset = 104.3;
-            public static final double rightDownOffset = 238.3;
+            public static final double leftUpOffset = 123.9;
+            public static final double leftDownOffset = 254.8;
+            public static final double rightUpOffset = 305.2;
+            public static final double rightDownOffset = 276.6;
 
             //Invert turn encoders
             public static final boolean leftUpEncoderInvert = true;
@@ -87,10 +87,10 @@ public final class Constants {
             public static final class motorAccelRates {
                 //Ranges from 0 to 2
                 //The max percentage acceleration allowed within a periodic tick
-                public static final double leftUp = 0.5;
-                public static final double leftDown = 0.5;
-                public static final double rightUp = 0.5;
-                public static final double rightDown = 0.5;
+                public static final double leftUp = 0.2;
+                public static final double leftDown = 0.2;
+                public static final double rightUp = 0.2;
+                public static final double rightDown = 0.2;
             }
 
             //The gear ratio between the drive motors and the drive wheel---the amount of drive wheel rotations per motor rotation
@@ -106,10 +106,10 @@ public final class Constants {
             public static final double maxSpeed = 5700d; //5714.28369140625
 
             //IDs of drive motors
-            public static final int leftUpID = 4;
-            public static final int leftDownID = 6;
-            public static final int rightUpID = 2;
-            public static final int rightDownID = 8;
+            public static final int leftUpID = 2;
+            public static final int leftDownID = 8;
+            public static final int rightUpID = 4;
+            public static final int rightDownID = 6;
 
             //Invert drive wheels
             public static final boolean leftUpInvert = false;
@@ -151,8 +151,8 @@ public final class Constants {
             */
 
             public static final int groundRoller = 10;
-            public static final int bottomIntake = 9;
-            public static final int topIntake = 13;
+            public static final int bottomIntake = 13;//9;
+            public static final int topIntake = 9;//13;
             public static final int backMiddleRoller = 16;
             public static final int frontMiddleRoller = 15;
             public static final int backLauncher = 11;
@@ -165,37 +165,37 @@ public final class Constants {
         public static final class motorInversion {
             public static final boolean groundRoller = false;
             public static final boolean bottomIntake = false;
-            public static final boolean topIntake = false;
+            public static final boolean topIntake = true;
             public static final boolean backMiddleRoller = false;
             public static final boolean frontMiddleRoller = false;
             public static final boolean backLauncher = true;
-            public static final boolean frontLauncher = false;
-            public static final boolean launcherAngle = false;
+            public static final boolean frontLauncher = true;
+            public static final boolean launcherAngle = true;
         }
 
         public static final class motorAccelRates {
             //Ranges from 0 to 2
             //The max percentage acceleration allowed within a periodic tick
-            public static final double groundRoller = 0.4;
-            public static final double bottomIntake = 0.4;
-            public static final double topIntake = 0.4;
-            public static final double backMiddleRoller = 0.4;
-            public static final double frontMiddleRoller = 0.4;
-            public static final double backLauncher = 0.4;
-            public static final double frontLauncher = 0.4;
-            public static final double launcherAngle = 0.4;
+            public static final double groundRoller = 0.1;
+            public static final double bottomIntake = 0.1;
+            public static final double topIntake = 0.1;
+            public static final double backMiddleRoller = 0.1;
+            public static final double frontMiddleRoller = 0.1;
+            public static final double backLauncher = 0.2;
+            public static final double frontLauncher = 0.2;
+            public static final double launcherAngle = 0.2;
         }
 
         //Range from -1 to 1
         //speed < 0 should represent the bottom row spinning such that the note travels away from the launcher
         //speed > 0 should represent the bottom row spinning such that the note travels closer to the launcher
-        public static final double intakeIntakeSpeed = 0.1;//0.25;
-        public static final double middleIntakeSpeed = 0.1;//0.25;
-        public static final double launcherIntakeSpeed = -0.2;//-0.5;
+        public static final double intakeIntakeSpeed = 0.4;//0.25;
+        public static final double middleIntakeSpeed = 0.15;//0.25;
+        public static final double launcherIntakeSpeed = -0.3;//-0.5;
 
         //We want the returned angle to be 90 degrees when straight up
         //This should be in degrees ie after the conversion factor is applied
-        public static final double angleEncoderOffset = 322.9;
+        public static final double angleEncoderOffset = 202.2;
         //360 degrees per one rotation of the absolute encoder?
         public static final double angleConversionFactor = 360d;
 
