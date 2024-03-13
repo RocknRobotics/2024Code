@@ -1,9 +1,11 @@
 package frc.robot;
 
 import com.revrobotics.CANSparkMax;
+
+import java.util.ArrayList;
+
 import com.revrobotics.CANSparkLowLevel.MotorType;
 
-import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DutyCycleEncoder;
 import edu.wpi.first.wpilibj.PS4Controller;
@@ -20,6 +22,10 @@ public class ArmMaster {
     public Launcher myLauncher;
     public LauncherInfoMaster myLauncherInfoMaster;
     public boolean blue;
+    //voltage, Timer.getFPGATimeStamp()
+    public ArrayList<double[]> voltageList;
+    //Max voltage in the list, make sure to min(max()) it with 11.3 and 12.7
+    public double maxVoltage;
 
     public ArmMaster() {
         /*NetworkTableInstance inst = NetworkTableInstance.create();
@@ -33,6 +39,8 @@ public class ArmMaster {
         myLauncher = new Launcher();
         myLauncherInfoMaster = new LauncherInfoMaster();
         blue = DriverStation.getAlliance().get() == DriverStation.Alliance.Blue;
+        voltageList = new ArrayList<double[]>();
+        maxVoltage = 11.3;
 
         launcherAngle.setInverted(armConstants.motorInversion.launcherAngle);
 
@@ -51,6 +59,10 @@ public class ArmMaster {
 
     public void intakeBottom() {
         myIntake.intake();
+    }
+
+    public void outtakeBottom() {
+        myIntake.outtake();
     }
 
     public void intakeLauncher(double speed) {
@@ -201,6 +213,8 @@ public class ArmMaster {
             if(hadRightInput || autoInput) {
                 fireLauncher();
             }
+        } else if(armController.getPOV() == 270) {
+            outtakeBottom();
         } else if(armController.getPOV() == 90) {
             intakeLauncher(Constants.armConstants.intakeIntakeSpeed * 2);
         } else if(armController.getPOV() == 135) {

@@ -3,6 +3,8 @@ package frc.robot;
 import frc.robot.Constants.gameConstants;
 import frc.robot.Constants.motorConstants.*;
 
+import java.util.ArrayList;
+
 import com.kauailabs.navx.frc.AHRS;
 
 import edu.wpi.first.math.controller.PIDController;
@@ -33,8 +35,10 @@ public class SwerveMaster {
 
     //Odometry - robot's position
     private double[] robotPosition;
+    //Each element will be length 3---x, y, and then the Timer.getFPGATimestamp() of when it was recorded
+    public ArrayList<double[]> robotChangeList;
 
-    //Odometry - robot's position
+    //Odometry - robot's velocity
     private double[] robotVelocity;
 
     //Odometry - Time for velocity
@@ -99,6 +103,7 @@ public class SwerveMaster {
 
         //Create robot position array as [x, y] starting as [0, 0]
         robotPosition = new double[2];
+        robotChangeList = new ArrayList<double[]>();
 
         //Create robot velocity array as [deltaX, deltaY] starting as [0, 0]
         robotVelocity = new double[2];
@@ -531,6 +536,21 @@ public class SwerveMaster {
     //Odometry - Update robot position. 
     //Should be called as often as possible for less error
     public void updateRobotPosition(double reducedAngle) {
+        if(CameraMaster.cameraPoseLock.get()) {
+            try {
+                CameraMaster.cameraPoseLock.wait(20);
+            } catch(InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+
+        if(CameraMaster.updatedPose) {
+            CameraMaster.cameraPoseLock.set(true);
+            //Get values
+            CameraMaster.cameraPoseLock.set(false);
+            CameraMaster.cameraPoseLock.notifyAll();
+        }
+        
         double[] leftUpPos = leftUpModule.getPosition(reducedAngle);
         double[] leftDownPos = leftDownModule.getPosition(reducedAngle);
         double[] rightUpPos = rightUpModule.getPosition(reducedAngle);

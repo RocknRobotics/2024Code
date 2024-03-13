@@ -2,9 +2,6 @@ package frc.robot;
 
 import com.revrobotics.CANSparkMax;
 
-import edu.wpi.first.networktables.NetworkTableInstance;
-import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
-
 import com.revrobotics.CANSparkLowLevel.MotorType;
 
 import frc.robot.Constants.armConstants;
@@ -35,6 +32,12 @@ public class Intake {
         groundRoller.set(Math.abs(armConstants.intakeIntakeSpeed - groundRoller.get()) > armConstants.motorAccelRates.groundRoller ? Math.signum(armConstants.intakeIntakeSpeed - groundRoller.get()) * armConstants.motorAccelRates.groundRoller  + groundRoller.get() : armConstants.intakeIntakeSpeed);
         bottomIntake.set(Math.abs(armConstants.intakeIntakeSpeed - bottomIntake.get()) > armConstants.motorAccelRates.bottomIntake ? Math.signum(armConstants.intakeIntakeSpeed - bottomIntake.get()) * armConstants.motorAccelRates.bottomIntake + bottomIntake.get() : armConstants.intakeIntakeSpeed);
         topIntake.set(Math.abs(-armConstants.intakeIntakeSpeed - topIntake.get()) > armConstants.motorAccelRates.topIntake ? Math.signum(-armConstants.intakeIntakeSpeed - topIntake.get()) * armConstants.motorAccelRates.topIntake + topIntake.get() : -armConstants.intakeIntakeSpeed);
+    }
+
+    public void outtake() {
+        groundRoller.set(Math.abs(-armConstants.intakeIntakeSpeed - groundRoller.get()) > armConstants.motorAccelRates.groundRoller ? Math.signum(-armConstants.intakeIntakeSpeed - groundRoller.get()) * armConstants.motorAccelRates.groundRoller + groundRoller.get() : -armConstants.intakeIntakeSpeed);
+        bottomIntake.set(Math.abs(-armConstants.intakeIntakeSpeed - bottomIntake.get()) > armConstants.motorAccelRates.bottomIntake ? Math.signum(-armConstants.intakeIntakeSpeed - bottomIntake.get()) * armConstants.motorAccelRates.bottomIntake + bottomIntake.get() : -armConstants.intakeIntakeSpeed);
+        topIntake.set(Math.abs(armConstants.intakeIntakeSpeed - topIntake.get()) > armConstants.motorAccelRates.topIntake ? Math.signum(armConstants.intakeIntakeSpeed - topIntake.get()) * armConstants.motorAccelRates.topIntake + topIntake.get() : armConstants.intakeIntakeSpeed);
     }
 
     public void stop() {

@@ -4,24 +4,18 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.opencv.core.CvType;
 import org.opencv.core.Mat;
-import org.opencv.core.Rect;
 import org.opencv.core.Scalar;
 
 import edu.wpi.first.apriltag.AprilTagDetection;
 import edu.wpi.first.apriltag.AprilTagDetector;
-import edu.wpi.first.apriltag.AprilTagPoseEstimate;
 import edu.wpi.first.apriltag.AprilTagPoseEstimator;
-import edu.wpi.first.cameraserver.CameraServer;
 import edu.wpi.first.cscore.CvSink;
-import edu.wpi.first.cscore.CvSource;
 import edu.wpi.first.cscore.UsbCamera;
-import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Pose3d;
-import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.util.PixelFormat;
-import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import edu.wpi.first.wpilibj.Timer;
 
 public class CameraMaster {
     public UsbCamera frontCamera;
@@ -52,11 +46,12 @@ public class CameraMaster {
     //Camera is 45 degrees above the y axis
     public Transform3d frontCameraTransform3d = new Transform3d(0, 0, 0, new Rotation3d(45 * Math.PI / 180, 0, 180 * Math.PI / 180));
 
-    public AtomicBoolean cameraPoseLock;
-    public boolean updatedPose;
-    public double updatedX;
-    public double updatedY;
-    public double updatedHeading;
+    public static AtomicBoolean cameraPoseLock;
+    public static boolean updatedPose;
+    public static double updatedX;
+    public static double updatedY;
+    public static double updatedHeading;
+    public static double updateTime;
 
     public CameraMaster() {
         int width = 640;
@@ -83,6 +78,9 @@ public class CameraMaster {
 
     public void update() {
         frontSink.grabFrame(frontImage, 1000000);
+        double imageReadTime = Timer.getFPGATimestamp();
+
+        frontImage.convertTo(frontImage, 0);
 
         for(int r = 0; r < frontImage.rows(); r++) {
             for(int c = 0; c < frontImage.cols(); c++) {
@@ -108,13 +106,16 @@ public class CameraMaster {
             -0.008506944128325297, -0.11274009828347498, 1.2966558338128389
             316.7591131907935, 128.31577303891754
              */
+            System.out.println();
             System.out.println(tagIDs[i]);
-            System.out.println(tagEstimates[i].getX() + ", " + tagEstimates[i].getY() + ", " + tagEstimates[i].getZ());
+            printTransform3d(tagEstimates[i]);
             System.out.println(frontTags[i].getCenterX() + ", " + frontTags[i].getCenterY());
         }
 
         for(int i = 0; i < cameraEstimates.length; i++) {
+            printPose3d(tagWorldTransforms[i].transformBy(tagEstimates[i]));
             cameraEstimates[i] = (tagWorldTransforms[i].transformBy(tagEstimates[i])).transformBy(frontCameraTransform3d);
+            printPose3d(cameraEstimates[i]);
         }
 
         for(int i = 0; i < cameraEstimates.length; i++) {
@@ -132,16 +133,34 @@ public class CameraMaster {
         }
 
         if(maxSimilarIndex != -1) {
+            if(cameraPoseLock.get()) {
+                try {
+                    cameraPoseLock.wait(20);
+                } catch(InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+            
             cameraPoseLock.set(true);
             updatedX = cameraEstimates[maxSimilarIndex].getX();
             updatedY = cameraEstimates[maxSimilarIndex].getY();
             updatedHeading = cameraEstimates[maxSimilarIndex].getRotation().getZ();
+            updateTime = imageReadTime;
             updatedPose = true;
             cameraPoseLock.set(false);
+            cameraPoseLock.notifyAll();
         }
     }
 
     public double distance(Pose3d first, Pose3d second) {
         return Math.sqrt(Math.pow(first.getX() - second.getX(), 2) + Math.pow(first.getY() - second.getY(), 2) + Math.pow(first.getZ() - second.getZ(), 2));
+    }
+
+    public void printTransform3d(Transform3d rotation) {
+        System.out.println(rotation.getX() + ", " + rotation.getY() + ", " + rotation.getZ() + ",\n" + rotation.getRotation().getX() * 180 / Math.PI + ", " + rotation.getRotation().getY() * 180 / Math.PI + ", " +  rotation.getRotation().getZ() * 180 / Math.PI);
+    }
+
+    public void printPose3d(Pose3d pose) {
+        System.out.println(pose.getX() + ", " + pose.getY() + ", " + pose.getZ() + ",\n" + pose.getRotation().getX() * 180 / Math.PI + ", " + pose.getRotation().getY() * 180 / Math.PI + ", " +  pose.getRotation().getZ() * 180 / Math.PI);
     }
 }
