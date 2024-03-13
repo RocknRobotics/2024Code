@@ -30,6 +30,33 @@ public final class Constants {
     public static final double accelerometerOdometerTolerancePosition = 0.1;
     public static final double accelerometerOdometerToleranceVelocity = 1;
 
+    public static final class autoConstants {
+        //Times to backup at certain positions
+        public static double backupTimeLeft = 3;        
+        public static double backupTimeCenter = 3;
+        public static double backupTimeRight = 3;
+
+        //Speeds to backup at certain positions
+        public static double backupSpeedLeft = 0.25;        
+        public static double backupSpeedCenter = 0.25;
+        public static double backupSpeedRight = 0.25;
+
+        //Speeds to turn at certain positions
+        public static double turnSpeed = 0.25;
+
+        //Auto turn tolerance
+        public static double turnTolerance = 0.5;
+
+        //Start poses relative to origin for auto as [x, y, angle]
+        public static double[] blueLeft = {3.663, 1, 315};
+        public static double[] blueCenter = {0, 1.25, 0};//{2.663, 1.25, 0};
+        public static double[] blueRight = {1.663, 1, 45};
+        public static double[] redLeft = {3.663, 15.541, 135};
+        public static double[] redCenter = {2.663, 15.291, 180};
+        public static double[] redRight = {1.663, 15.541, 225};
+
+    }
+
     public static final class motorConstants {
         public static final class turnConstants {
             public static final class motorAccelRates {

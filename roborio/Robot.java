@@ -98,7 +98,108 @@ public class Robot extends TimedRobot {
   }
 
   @Override
-  public void autonomousInit() {}
+  public void autonomousInit() {
+    SmartDashboard.putString("Current mode: ", "autonomousInit");
+    autoNum = (int) SmartDashboard.getNumber("Auto (1 = Left of Speaker, 2 = Center, 3 = Right)", 0);
+
+    shootNote();
+
+    if (autoNum == 1) {
+      if (mySwerveMaster.blue) {
+        mySwerveMaster.resetPose(Constants.autoConstants.blueLeft[0], Constants.autoConstants.blueLeft[1], Constants.autoConstants.blueLeft[2]);
+      } else {
+        mySwerveMaster.resetPose(Constants.autoConstants.redLeft[0], Constants.autoConstants.redLeft[1], Constants.autoConstants.redLeft[2]);
+      }
+      //Turn and move to intake note for shooting into speaker
+      double desiredAngle = mySwerveMaster.blue ? 0 : 180;
+      double desiredTurnInput = mySwerveMaster.turnPIDController.calculate(desiredAngle, mySwerveMaster.getReducedAngle()) / 180d;
+      double time = Timer.getFPGATimestamp();
+      while (Timer.getFPGATimestamp() - time < Constants.autoConstants.backupTimeLeft) {
+        mySwerveMaster.updateRobotPosition(mySwerveMaster.getReducedAngle());
+        mySwerveMaster.drive(new double[]{0, Constants.autoConstants.backupSpeedLeft, desiredTurnInput}, 
+        new double[]{mySwerveMaster.leftUpModule.getAbsoluteTurnPosition(), mySwerveMaster.leftDownModule.getAbsoluteTurnPosition(), mySwerveMaster.rightUpModule.getAbsoluteTurnPosition(), mySwerveMaster.rightDownModule.getAbsoluteTurnPosition()},
+        mySwerveMaster.getReducedAngle(), Constants.autoConstants.backupSpeedLeft, Constants.autoConstants.turnSpeed);
+        myArmMaster.intakeBottom();
+        desiredTurnInput = mySwerveMaster.turnPIDController.calculate(desiredAngle, mySwerveMaster.getReducedAngle()) / 180d;
+      }
+
+      mySwerveMaster.stop();
+
+      double relativeX = Constants.gameConstants.speakerX - mySwerveMaster.getRobotPosition()[0];
+      double relativeY = (mySwerveMaster.blue ? Constants.gameConstants.blueConstants.speakerY : Constants.gameConstants.redConstants.speakerY) - mySwerveMaster.getRobotPosition()[1];
+      double originalAngle = ((Math.atan2(relativeY, relativeX) + 3 * Math.PI / 2) % (Math.PI * 2)) * 180 / Math.PI;
+      desiredAngle = mySwerveMaster.blue ? Math.max(Math.min(Constants.gameConstants.blueConstants.maxSpeakerAngle, originalAngle), Constants.gameConstants.blueConstants.minSpeakerAngle) : Math.max(Math.min(Constants.gameConstants.redConstants.maxSpeakerAngle, originalAngle), Constants.gameConstants.redConstants.minSpeakerAngle);
+      desiredTurnInput = mySwerveMaster.turnPIDController.calculate(desiredAngle, mySwerveMaster.getReducedAngle()) / 180d;
+      while (Math.abs(desiredTurnInput - mySwerveMaster.getReducedAngle()) >= Constants.autoConstants.turnTolerance) {
+        myArmMaster.stopIntake();
+        mySwerveMaster.updateRobotPosition(mySwerveMaster.getReducedAngle());
+        mySwerveMaster.drive(new double[]{0, 0, desiredTurnInput}, 
+        new double[]{mySwerveMaster.leftUpModule.getAbsoluteTurnPosition(), mySwerveMaster.leftDownModule.getAbsoluteTurnPosition(), mySwerveMaster.rightUpModule.getAbsoluteTurnPosition(), mySwerveMaster.rightDownModule.getAbsoluteTurnPosition()},
+         mySwerveMaster.getReducedAngle(), 0, Constants.autoConstants.turnSpeed);
+        desiredTurnInput = mySwerveMaster.turnPIDController.calculate(desiredAngle, mySwerveMaster.getReducedAngle()) / 180d;
+      }
+
+      mySwerveMaster.stop();
+      shootNote();
+
+    } else if (autoNum == 2) { //Center start for auto.
+      if (mySwerveMaster.blue) {
+        mySwerveMaster.resetPose(Constants.autoConstants.blueCenter[0], Constants.autoConstants.blueCenter[1], Constants.autoConstants.blueCenter[2]);
+      } else {
+        mySwerveMaster.resetPose(Constants.autoConstants.redCenter[0], Constants.autoConstants.redCenter[1], Constants.autoConstants.redCenter[2]);
+      }
+      double time = Timer.getFPGATimestamp();
+      while (Timer.getFPGATimestamp() - time < Constants.autoConstants.backupTimeCenter) {
+        mySwerveMaster.updateRobotPosition(mySwerveMaster.getReducedAngle());
+        mySwerveMaster.drive(new double[]{0, Constants.autoConstants.backupSpeedCenter, 0}, 
+        new double[]{mySwerveMaster.leftUpModule.getAbsoluteTurnPosition(), mySwerveMaster.leftDownModule.getAbsoluteTurnPosition(), mySwerveMaster.rightUpModule.getAbsoluteTurnPosition(), mySwerveMaster.rightDownModule.getAbsoluteTurnPosition()},
+         mySwerveMaster.getReducedAngle(), Constants.autoConstants.backupSpeedCenter, 0);
+         myArmMaster.intakeBottom();
+      }
+
+      mySwerveMaster.stop();
+      shootNote();
+
+    } else if (autoNum == 3) {
+      if (mySwerveMaster.blue) {
+        mySwerveMaster.resetPose(Constants.autoConstants.blueRight[0], Constants.autoConstants.blueRight[1], Constants.autoConstants.blueRight[2]);
+      } else {
+        mySwerveMaster.resetPose(Constants.autoConstants.redRight[0], Constants.autoConstants.redRight[1], Constants.autoConstants.redRight[2]);
+      }
+      //Turn and move to intake note for shooting into speaker
+      double desiredAngle = mySwerveMaster.blue ? 0 : 180;
+      double desiredTurnInput = mySwerveMaster.turnPIDController.calculate(desiredAngle, mySwerveMaster.getReducedAngle()) / 180d;
+      double time = Timer.getFPGATimestamp();
+      while (Timer.getFPGATimestamp() - time < Constants.autoConstants.backupTimeRight) {
+        mySwerveMaster.updateRobotPosition(mySwerveMaster.getReducedAngle());
+        mySwerveMaster.drive(new double[]{0, Constants.autoConstants.backupSpeedRight, desiredTurnInput}, 
+        new double[]{mySwerveMaster.leftUpModule.getAbsoluteTurnPosition(), mySwerveMaster.leftDownModule.getAbsoluteTurnPosition(), mySwerveMaster.rightUpModule.getAbsoluteTurnPosition(), mySwerveMaster.rightDownModule.getAbsoluteTurnPosition()},
+         mySwerveMaster.getReducedAngle(), Constants.autoConstants.backupSpeedRight, Constants.autoConstants.turnSpeed);
+         myArmMaster.intakeBottom();
+        desiredTurnInput = mySwerveMaster.turnPIDController.calculate(desiredAngle, mySwerveMaster.getReducedAngle()) / 180d;
+      }
+
+      mySwerveMaster.stop();
+
+      double relativeX = Constants.gameConstants.speakerX - mySwerveMaster.getRobotPosition()[0];
+      double relativeY = (mySwerveMaster.blue ? Constants.gameConstants.blueConstants.speakerY : Constants.gameConstants.redConstants.speakerY) - mySwerveMaster.getRobotPosition()[1];
+      double originalAngle = ((Math.atan2(relativeY, relativeX) + 3 * Math.PI / 2) % (Math.PI * 2)) * 180 / Math.PI;
+      desiredAngle = mySwerveMaster.blue ? Math.max(Math.min(Constants.gameConstants.blueConstants.maxSpeakerAngle, originalAngle), Constants.gameConstants.blueConstants.minSpeakerAngle) : Math.max(Math.min(Constants.gameConstants.redConstants.maxSpeakerAngle, originalAngle), Constants.gameConstants.redConstants.minSpeakerAngle);
+      desiredTurnInput = mySwerveMaster.turnPIDController.calculate(desiredAngle, mySwerveMaster.getReducedAngle()) / 180d;
+      while (Math.abs(desiredTurnInput - mySwerveMaster.getReducedAngle()) >= Constants.autoConstants.turnTolerance) {
+        myArmMaster.stopIntake();
+        mySwerveMaster.updateRobotPosition(mySwerveMaster.getReducedAngle());
+        mySwerveMaster.drive(new double[]{0, 0, desiredTurnInput}, 
+        new double[]{mySwerveMaster.leftUpModule.getAbsoluteTurnPosition(), mySwerveMaster.leftDownModule.getAbsoluteTurnPosition(), mySwerveMaster.rightUpModule.getAbsoluteTurnPosition(), mySwerveMaster.rightDownModule.getAbsoluteTurnPosition()},
+         mySwerveMaster.getReducedAngle(), 0, Constants.autoConstants.turnSpeed);
+        desiredTurnInput = mySwerveMaster.turnPIDController.calculate(desiredAngle, mySwerveMaster.getReducedAngle()) / 180d;
+      }
+
+      mySwerveMaster.stop();
+      shootNote();
+
+    } 
+  }
 
   @Override
   public void autonomousPeriodic() {}
