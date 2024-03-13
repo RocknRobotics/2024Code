@@ -32,25 +32,25 @@ public class CameraMaster {
     public AprilTagPoseEstimator onlyEstimator;
 
     public Pose3d[] tagWorldTransforms = new Pose3d[]{
-        new Pose3d(0, 0, 0, new Rotation3d(0, 0, 0)), 
-        new Pose3d(0, 0, 0, new Rotation3d(0, 0, 0)), 
-        new Pose3d(0, 0, 0, new Rotation3d(0, 0, 0)), 
-        new Pose3d(0, 0, 0, new Rotation3d(0, 0, 0)), 
-        new Pose3d(0, 0, 0, new Rotation3d(0, 0, 0)), 
-        new Pose3d(0, 0, 0, new Rotation3d(0, 0, 0)), 
-        new Pose3d(0, 0, 0, new Rotation3d(0, 0, 0)), 
-        new Pose3d(0, 0, 0, new Rotation3d(0, 0, 0)), 
-        new Pose3d(0, 0, 0, new Rotation3d(0, 0, 0)), 
-        new Pose3d(0, 0, 0, new Rotation3d(0, 0, 0)), 
-        new Pose3d(0, 0, 0, new Rotation3d(0, 0, 0)), 
-        new Pose3d(0, 0, 0, new Rotation3d(0, 0, 0)), 
-        new Pose3d(0, 0, 0, new Rotation3d(0, 0, 0)), 
-        new Pose3d(0, 0, 0, new Rotation3d(0, 0, 0)), 
-        new Pose3d(0, 0, 0, new Rotation3d(0, 0, 0)), 
-        new Pose3d(0, 0, 0, new Rotation3d(0, 0, 0))};
+        new Pose3d(7.9583, 15.1176, 1.3559, new Rotation3d(0, 0, 120 * Math.PI / 180)), 
+        new Pose3d(7.3205, 16.2232, 1.3559, new Rotation3d(0, 0, 120 * Math.PI / 180)), 
+        new Pose3d(3.2215, 16.6174, 1.4511, new Rotation3d(0, 0, 180 * Math.PI / 180)), 
+        new Pose3d(2.6563, 16.6174, 1.4511, new Rotation3d(0, 0, 180 * Math.PI / 180)), 
+        new Pose3d(     0, 14.7389, 1.3559, new Rotation3d(0, 0, 270 * Math.PI / 180)), 
+        new Pose3d(     0,  1.8796, 1.3559, new Rotation3d(0, 0, 270 * Math.PI / 180)), 
+        new Pose3d(2.6563,       0, 1.4511, new Rotation3d(0, 0,   0 * Math.PI / 180)), 
+        new Pose3d(3.2215,       0, 1.4511, new Rotation3d(0, 0,   0 * Math.PI / 180)), 
+        new Pose3d(7.3205,  0.3942, 1.3559, new Rotation3d(0, 0,  60 * Math.PI / 180)), 
+        new Pose3d(7.9583,  1.4996, 1.3559, new Rotation3d(0, 0,  60 * Math.PI / 180)), 
+        new Pose3d(4.4910, 11.9428, 1.3208, new Rotation3d(0, 0, 300 * Math.PI / 180)), 
+        new Pose3d(3.7059, 11.9428, 1.3208, new Rotation3d(0, 0,  60 * Math.PI / 180)), 
+        new Pose3d(4.0991, 11.2583, 1.3208, new Rotation3d(0, 0, 180 * Math.PI / 180)), 
+        new Pose3d(4.0991,  5.3589, 1.3208, new Rotation3d(0, 0,   0 * Math.PI / 180)), 
+        new Pose3d(3.7059,  4.6794, 1.3208, new Rotation3d(0, 0, 120 * Math.PI / 180)), 
+        new Pose3d(4.4910,  4.6794, 1.3208, new Rotation3d(0, 0, 240 * Math.PI / 180))};
 
     //Camera is 45 degrees above the y axis
-    public Transform3d frontCameraTransform3d = new Transform3d(0, 0, 0, new Rotation3d(0, 0, 0));
+    public Transform3d frontCameraTransform3d = new Transform3d(0, 0, 0, new Rotation3d(45 * Math.PI / 180, 0, 180 * Math.PI / 180));
 
     public AtomicBoolean cameraPoseLock;
     public boolean updatedPose;
