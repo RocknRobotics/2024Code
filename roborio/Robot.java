@@ -343,4 +343,25 @@ public class Robot extends TimedRobot {
     SmartDashboard.putNumber("Drive Controller Left Y: ", driveController.getLeftY());
     SmartDashboard.putNumber("Drive Controller Right Y: ", driveController.getRightY());
   }
+
+  public void shootNote() {
+    while (!(SmartDashboard.getString("Launcher Status: ", "NOT YET").equals("LAUNCHER READY") &&  
+      SmartDashboard.getString("Arm Angle Status: ", "NOT YET").equals("ARM ANGLE READY"))) {
+      mySwerveMaster.stop();
+      myArmMaster.stopIntake();
+
+      //Prep arm for scoring into speaker
+      LauncherInfo info = myArmMaster.myLauncherInfoMaster.get(Math.sqrt(Math.pow(mySwerveMaster.getRobotPosition()[0] - Constants.gameConstants.speakerX, 2) + Math.pow(mySwerveMaster.getRobotPosition()[1] - (mySwerveMaster.blue ? Constants.gameConstants.blueConstants.speakerY : Constants.gameConstants.redConstants.speakerY), 2)), 0);
+      myArmMaster.prepLauncher(info.speeds[0]);
+
+      if(Math.abs(info.angles[0] - myArmMaster.getAngle()) < Constants.armConstants.angleTolerance) {
+        SmartDashboard.putString("Arm Angle Status: ", "ARM ANGLE READY");
+        myArmMaster.changeAngle(0);
+      } else {
+        SmartDashboard.putString("Arm Angle Status: ", "NOT YET");
+        myArmMaster.changeAngle((info.angles[0] - myArmMaster.getAngle()) / 45);
+      }
+    }
+    myArmMaster.fireLauncher();
+  }
 }
