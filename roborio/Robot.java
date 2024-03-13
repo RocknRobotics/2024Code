@@ -40,6 +40,8 @@ public class Robot extends TimedRobot {
   public static double fireFactor;
   public static double angleFactor;
 
+  public CameraMaster myCameraMaster;
+
   //public Relay testAngleMotor;
     
   @Override
@@ -69,7 +71,20 @@ public class Robot extends TimedRobot {
 
     SmartDashboard.putString("Auto-Shoot Status: ", "DON'T FIRE YET");
 
-    //testAngleMotor = new Relay(0, Relay.Direction.kBoth);
+    myCameraMaster = new CameraMaster();
+
+    Thread cameraThread = new Thread(() -> {
+      while(true) {
+        try {
+          Thread.sleep(500);
+        } catch(InterruptedException e) {
+          e.printStackTrace();
+        }
+
+        myCameraMaster.update();
+        }
+    });
+    cameraThread.start();
   }
 
   //Every 20ms
