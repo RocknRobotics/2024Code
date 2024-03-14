@@ -118,8 +118,8 @@ public class CameraMaster {
 
         for(int i = 0; i < cameraEstimates.length; i++) {
             double radius = Math.sqrt(Math.pow(tagEstimates[i].getY(), 2) + Math.pow(tagEstimates[i].getZ(), 2));
-            double angle = tagEstimates[i].getRotation().getX() - Math.PI;
-            tagEstimates[i] = new Transform3d(tagEstimates[i].getX(), Math.cos(angle) * radius, Math.sin(angle) * radius, new Rotation3d(angle, tagEstimates[i].getRotation().getY(), tagEstimates[i].getRotation().getZ()));
+            double angle = tagEstimates[i].getRotation().getX() + cameraAngle;
+            tagEstimates[i] = new Transform3d(tagEstimates[i].getX(), Math.cos(angle) * radius, -Math.sin(angle) * radius, new Rotation3d(angle, tagEstimates[i].getRotation().getY(), tagEstimates[i].getRotation().getZ()));
             printTransform3d(tagEstimates[i]);
             tagEstimates[i] = new Transform3d(tagEstimates[i].getX() + 0.27, tagEstimates[i].getY() + 0.33, tagEstimates[i].getZ(), tagEstimates[i].getRotation());
             printTransform3d(tagEstimates[i]);
@@ -155,6 +155,22 @@ public class CameraMaster {
                     }
                 }
             }
+        }
+
+        while(cameraEstimates[maxSimilarIndex].getRotation().getZ() <= 0) {
+            cameraEstimates[maxSimilarIndex] = new Pose3d(cameraEstimates[maxSimilarIndex].getX(), 
+                cameraEstimates[maxSimilarIndex].getY(), cameraEstimates[maxSimilarIndex].getZ(), 
+                new Rotation3d(cameraEstimates[maxSimilarIndex].getRotation().getX(), 
+                    cameraEstimates[maxSimilarIndex].getRotation().getY(), 
+                    cameraEstimates[maxSimilarIndex].getRotation().getZ() + 360));
+        }
+
+        while(cameraEstimates[maxSimilarIndex].getRotation().getZ() > 360) {
+            cameraEstimates[maxSimilarIndex] = new Pose3d(cameraEstimates[maxSimilarIndex].getX(), 
+                cameraEstimates[maxSimilarIndex].getY(), cameraEstimates[maxSimilarIndex].getZ(), 
+                new Rotation3d(cameraEstimates[maxSimilarIndex].getRotation().getX(), 
+                    cameraEstimates[maxSimilarIndex].getRotation().getY(), 
+                    cameraEstimates[maxSimilarIndex].getRotation().getZ() - 360));
         }
 
         if(tagEstimates.length != 0) {
