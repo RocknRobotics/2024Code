@@ -5,6 +5,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import org.opencv.core.CvType;
 import org.opencv.core.Mat;
 import org.opencv.core.Scalar;
+import org.opencv.imgproc.Imgproc;
 
 import edu.wpi.first.apriltag.AprilTagDetection;
 import edu.wpi.first.apriltag.AprilTagDetector;
@@ -44,7 +45,7 @@ public class CameraMaster {
         new Pose3d(4.4910,  4.6794, 1.3208, new Rotation3d(0, 0, 240 * Math.PI / 180))};
 
     //Camera is 45 degrees above the y axis
-    public Transform3d frontCameraTransform3d = new Transform3d(0, 0, 0, new Rotation3d(45 * Math.PI / 180, 0, 180 * Math.PI / 180));
+    public Transform3d frontCameraTransform3d = new Transform3d(-0.27, -0.33, 0, new Rotation3d(0, 0, 0));
 
     public static AtomicBoolean cameraPoseLock;
     public static boolean updatedPose;
@@ -57,7 +58,7 @@ public class CameraMaster {
         int width = 640;
         int height = 360;
         frontCamera = new UsbCamera("Front Camera", 0);
-        frontCamera.setVideoMode(PixelFormat.kMJPEG, width, height, 1);
+        frontCamera.setVideoMode(PixelFormat.kMJPEG, width, height, 2);
         frontSink = new CvSink("Front Sink", PixelFormat.kBGR);
         frontSink.setSource(frontCamera);
         frontImage = new Mat(width, height, CvType.CV_8UC3, new Scalar(0, 0, 0));
@@ -80,8 +81,6 @@ public class CameraMaster {
         frontSink.grabFrame(frontImage, 1000000);
         double imageReadTime = Timer.getFPGATimestamp();
 
-        frontImage.convertTo(frontImage, 0);
-
         for(int r = 0; r < frontImage.rows(); r++) {
             for(int c = 0; c < frontImage.cols(); c++) {
                 double[] values = frontImage.get(r, c);
@@ -95,10 +94,13 @@ public class CameraMaster {
         Pose3d[] cameraEstimates = new Pose3d[tagEstimates.length];
         int[] tagIDs = new int[tagEstimates.length];
         int[] similar = new int[tagEstimates.length];
-        int maxSimilarIndex = -1;
+        int maxSimilarIndex = 0;
 
         for(int i = 0; i < frontTags.length; i++) {
             tagEstimates[i] = onlyEstimator.estimate(frontTags[i]);
+            //tagEstimates[i] = new Transform3d(tagEstimates[i].getX(), -tagEstimates[i].getZ() - 0.12, tagEstimates[i].getY(), new Rotation3d(tagEstimates[i].getX(), tagEstimates[i].getZ(), tagEstimates[i].getY()));
+            tagEstimates[i] = new Transform3d(-tagEstimates[i].getX(), tagEstimates[i].getZ(), -tagEstimates[i].getY(), new Rotation3d(-tagEstimates[i].getX() * Math.PI / 180, tagEstimates[i].getZ() * Math.PI / 180, -tagEstimates[i].getY() * Math.PI / 180));
+
             tagIDs[i] = frontTags[i].getId();
 
             /*
@@ -113,9 +115,20 @@ public class CameraMaster {
         }
 
         for(int i = 0; i < cameraEstimates.length; i++) {
-            printPose3d(tagWorldTransforms[i].transformBy(tagEstimates[i]));
-            cameraEstimates[i] = (tagWorldTransforms[i].transformBy(tagEstimates[i])).transformBy(frontCameraTransform3d);
+            double radius = Math.sqrt(Math.pow(tagEstimates[i].getX(), 2) + Math.pow(tagEstimates[i].getY(), 2));
+            double angle = tagWorldTransforms[tagIDs[i] - 1].getZ() + tagEstimates[i].getZ();
+            tagEstimates[i] = new Transform3d(Math.cos(angle) * radius, Math.sin(angle) * radius, tagEstimates[i].getZ(), new Rotation3d(tagEstimates[i].getX(), tagEstimates[i].getY(), angle));
+            printTransform3d(tagEstimates[i]);
+            tagEstimates[i] = tagEstimates[i].plus(frontCameraTransform3d);
+            printTransform3d(tagEstimates[i]);
+            cameraEstimates[i] = tagWorldTransforms[tagIDs[i] - 1].plus(tagEstimates[i].inverse());
             printPose3d(cameraEstimates[i]);
+            /*cameraEstimates[i] = tagWorldTransforms[tagIDs[i] - 1].plus(tagEstimates[i].inverse());
+            printPose3d(cameraEstimates[i]);
+            cameraEstimates[i] = new Pose3d(cameraEstimates[i].getX(), cameraEstimates[i].getY(), cameraEstimates[i].getZ(), cameraEstimates[i].getRotation());
+            printPose3d(cameraEstimates[i]);
+            cameraEstimates[i] = cameraEstimates[i].plus(frontCameraTransform3d);
+            printPose3d(cameraEstimates[i]);*/
         }
 
         for(int i = 0; i < cameraEstimates.length; i++) {
@@ -132,7 +145,7 @@ public class CameraMaster {
             }
         }
 
-        if(maxSimilarIndex != -1) {
+        if(tagEstimates.length != 0) {
             if(cameraPoseLock.get()) {
                 try {
                     cameraPoseLock.wait(20);
@@ -144,11 +157,10 @@ public class CameraMaster {
             cameraPoseLock.set(true);
             updatedX = cameraEstimates[maxSimilarIndex].getX();
             updatedY = cameraEstimates[maxSimilarIndex].getY();
-            updatedHeading = cameraEstimates[maxSimilarIndex].getRotation().getZ();
+            updatedHeading = cameraEstimates[maxSimilarIndex].getRotation().getZ() * 180 / Math.PI;
             updateTime = imageReadTime;
             updatedPose = true;
             cameraPoseLock.set(false);
-            cameraPoseLock.notifyAll();
         }
     }
 
