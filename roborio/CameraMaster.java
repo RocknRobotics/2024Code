@@ -132,7 +132,7 @@ public class CameraMaster {
                 tagWorldTransforms[tagIDs[i] - 1].getZ() + tagEstimates[i].getZ(), 
                 new Rotation3d(tagWorldTransforms[tagIDs[i] - 1].getRotation().getX() + tagEstimates[i].getRotation().getX(), 
                     tagWorldTransforms[tagIDs[i] - 1].getRotation().getY() + tagEstimates[i].getRotation().getY(), 
-                    tagWorldTransforms[tagIDs[i] - 1].getRotation().getZ() + tagEstimates[i].getRotation().getZ()));
+                    tagEstimates[i].getRotation().getZ()));
             printPose3d(cameraEstimates[i]);
             /*cameraEstimates[i] = tagWorldTransforms[tagIDs[i] - 1].plus(tagEstimates[i].inverse());
             printPose3d(cameraEstimates[i]);
