@@ -5,20 +5,20 @@ import frc.robot.Constants.motorConstants.*;
 
 import java.util.ArrayList;
 
+import com.ctre.phoenix6.hardware.Pigeon2;
 import com.kauailabs.navx.frc.AHRS;
 
 import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.wpilibj.I2C.Port;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
-import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.PS4Controller;
 
 //import edu.wpi.first.math.kinematics.ChassisSpeeds;
 //import edu.wpi.first.math.geometry.Pose2d;
 //import edu.wpi.first.math.geometry.Rotation2d;
 
-import edu.wpi.first.networktables.*;
+//import edu.wpi.first.networktables.*;
 
 public class SwerveMaster {
     //Variables for each swerve module
@@ -29,9 +29,10 @@ public class SwerveMaster {
 
     //Accelerometer object
     public AHRS accelerometer;
+    public Pigeon2 pigeon;
 
     //Enables continious input
-    private PIDController turnPIDController;
+    public PIDController turnPIDController;
 
     //Odometry - robot's position
     private double[] robotPosition;
@@ -39,10 +40,10 @@ public class SwerveMaster {
     public ArrayList<double[]> robotChangeList;
 
     //Odometry - robot's velocity
-    private double[] robotVelocity;
+    //private double[] robotVelocity;
 
     //Odometry - Time for velocity
-    private double prevTimePos;
+    //private double prevTimePos;
 
     //Odometry - Prev position for velocity
     private double[] prevPosition;
@@ -50,30 +51,30 @@ public class SwerveMaster {
     //Odometry - Prev angle for omega
     private double prevAngle;
 
+    private double angleOffset;
+
     //Odometry - Time for omega
-    private double prevTimeAng;
+    //private double prevTimeAng;
 
     //PathPlanner - Network tables
-    private NetworkTableInstance jetsonClient;
+    /*private NetworkTableInstance jetsonClient;
     private DoubleArrayPublisher chassisPublisher;
     private DoubleArrayPublisher posePublisher;
     private DoubleArraySubscriber poseSubscriber;
     private BooleanSubscriber poseBooleanSubscriber;
     private DoubleArraySubscriber ChassisSpeedsSubscriber;
-    private BooleanSubscriber ChassisSpeedsBooleanSubscriber;
+    private BooleanSubscriber ChassisSpeedsBooleanSubscriber;*/
     
 
     //PathPlanner - True if path planner is controlling robot, cancels controller
-    boolean pathing = false;
+    //boolean pathing = false;
 
     boolean blue;
 
     //Constructor
     public SwerveMaster() {
-        /*NetworkTableInstance inst = NetworkTableInstance.create();
-        inst.startServer();
-        SmartDashboard.setNetworkTableInstance(inst);*/
-        
+        pigeon = new Pigeon2(18, "rio");
+
         //Create swerve module objects
         leftUpModule = new SwerveModule(driveConstants.leftUpID, turnConstants.leftUpID, turnConstants.leftUpEncoderID, driveConstants.leftUpInvert, 
         turnConstants.leftUpInvert, turnConstants.leftUpEncoderInvert, turnConstants.leftUpOffset, driveConstants.motorAccelRates.leftUp, turnConstants.motorAccelRates.leftUp);
@@ -106,7 +107,7 @@ public class SwerveMaster {
         robotChangeList = new ArrayList<double[]>();
 
         //Create robot velocity array as [deltaX, deltaY] starting as [0, 0]
-        robotVelocity = new double[2];
+        //robotVelocity = new double[2];
 
         //Set previous position
         prevPosition = new double[2];
@@ -118,27 +119,30 @@ public class SwerveMaster {
         SmartDashboard.putNumber("Drift Constant", -2d);
 
         //Set times
-        prevTimePos = System.currentTimeMillis();
-        prevTimeAng = System.currentTimeMillis();
+        //prevTimePos = System.currentTimeMillis();
+        //prevTimeAng = System.currentTimeMillis();
 
         //Network Tables
-        jetsonClient = NetworkTableInstance.create();
+        /*jetsonClient = NetworkTableInstance.create();
         jetsonClient.setServer("10.36.92.11");
         jetsonClient.startClient4("roboRio");
 
         //Publishers and subscribers
         chassisPublisher = jetsonClient.getDoubleArrayTopic("/roborio/swervemaster/chassis").publish();
-        posePublisher = jetsonClient.getDoubleArrayTopic("/roborio/swervemaster/pose").publish();
+        posePublisher = jetsonClient.getDoubleArrayTopic("/roborio/swervemaster/pose").publish();*/
         /*poseSubscriber = jetsonClient.getDoubleArrayTopic("/roborio/swervemaster/resetPoseArray").subscribe(new double[]{0, 0, 0}, null);
         poseBooleanSubscriber = jetsonClient.getBooleanTopic("/roborio/swervemaster/resetPoseBoolean").subscribe(false, null);
         ChassisSpeedsSubscriber = jetsonClient.getDoubleArrayTopic("/roborio/swervemaster/setChassisSpeeds").subscribe(new double[]{0, 0, 0}, null);
         ChassisSpeedsBooleanSubscriber = jetsonClient.getBooleanTopic("/roborio/swervemaster/setChassisSpeedsBoolean").subscribe(false, null);
 */
 
-        blue = DriverStation.getAlliance().get() == DriverStation.Alliance.Blue;
+        blue = false;
 
         SmartDashboard.putString("Heading Status: ", "NOT YET");
         SmartDashboard.putString("Angle Range Status: ", "NOT YET");
+
+        angleOffset = 0.0;
+
     }
 
     //Stop moving the robot 
@@ -148,11 +152,14 @@ public class SwerveMaster {
 
     //Method called every 20ms 
     public void update(PS4Controller controller, double driveFactor, double turnFactor) {
+        updateRobotPosition(getReducedAngle());
         //If driveFactor and turnFactor are 0, do nothing and stop the motors
         if(driveFactor == 0 && turnFactor == 0) {
             stop();
             return;
         }
+
+        boolean selfDrive = false;
 
         //Puts X an Y axis inputs of controller in an array as [leftX, leftY, rightX]
         double[] inputs = new double[]{Math.abs(controller.getLeftX()) < Constants.driveControllerStopBelowThis ? 0.0 : controller.getLeftX(), 
@@ -163,11 +170,11 @@ public class SwerveMaster {
             //Turn to prep for shooting into speaker
             double relativeX = gameConstants.speakerX - robotPosition[0];
             double relativeY = (blue ? gameConstants.blueConstants.speakerY : gameConstants.redConstants.speakerY) - robotPosition[1];
-            double originalAngle = ((Math.atan2(relativeY, relativeX) + 3 * Math.PI / 2) % (Math.PI * 2)) * 180 / Math.PI;
+            double originalAngle = (Math.atan2(-relativeX, relativeY)) * 180 / Math.PI;
             double desiredAngle = blue ? Math.max(Math.min(gameConstants.blueConstants.maxSpeakerAngle, originalAngle), gameConstants.blueConstants.minSpeakerAngle) : Math.max(Math.min(gameConstants.redConstants.maxSpeakerAngle, originalAngle), gameConstants.redConstants.minSpeakerAngle);
-            double desiredTurnInput = turnPIDController.calculate(desiredAngle, getReducedAngle()) / 180d;
+            double desiredTurnInput = turnPIDController.calculate(getReducedAngle(), desiredAngle) / 180d;
 
-            inputs[2] = desiredTurnInput;
+            inputs[2] = desiredTurnInput / turnFactor;
 
             if(Math.abs(desiredTurnInput) < Constants.driveControllerStopBelowThis) {
                 SmartDashboard.putString("Heading Status: ", "HEADING READY");
@@ -184,11 +191,11 @@ public class SwerveMaster {
             //Turn to prep for shooting into amp
             double relativeX = gameConstants.ampX - robotPosition[0];
             double relativeY = (blue ? gameConstants.blueConstants.ampY : gameConstants.redConstants.ampY) - robotPosition[1];
-            double originalAngle = ((Math.atan2(relativeY, relativeX) + 3 * Math.PI / 2) % (Math.PI * 2))  * 180 / Math.PI;
+            double originalAngle = (Math.atan2(-relativeX, relativeY)) * 180 / Math.PI;
             double desiredAngle = Math.max(Math.min(gameConstants.maxAmpAngle, originalAngle), gameConstants.minAmpAngle);
-            double desiredTurnInput = turnPIDController.calculate(desiredAngle, getReducedAngle()) / 180d;
+            double desiredTurnInput = turnPIDController.calculate(getReducedAngle(), desiredAngle) / 180d;
 
-            inputs[2] = desiredTurnInput;
+            inputs[2] = desiredTurnInput / turnFactor;
 
             if(Math.abs(desiredTurnInput) < Constants.driveControllerStopBelowThis) {
                 SmartDashboard.putString("Heading Status: ", "HEADING READY");
@@ -202,14 +209,21 @@ public class SwerveMaster {
                 SmartDashboard.putString("Angle Range Status: ", "NOT YET");
             }
         } else if(controller.getCircleButton()) {
+            selfDrive = true;
+            double relativeX = Constants.gameConstants.trapX1 - robotPosition[0];
+            double relativeY = (blue ? Constants.gameConstants.blueConstants.trapY1 : Constants.gameConstants.redConstants.trapY1) - robotPosition[1];
+            double originalAngle = (Math.atan2(-relativeX, relativeY)) * 180 / Math.PI;
+            double desiredAngle = blue ? Math.max(Math.min(Constants.gameConstants.blueConstants.maxTrap1Angle, originalAngle), Constants.gameConstants.blueConstants.minTrap1Angle) : Math.max(Math.min(Constants.gameConstants.redConstants.maxTrap1Angle, originalAngle), Constants.gameConstants.redConstants.maxTrap1Angle);
+
+            driveTo(Constants.autoConstants.trap1X, blue ? Constants.autoConstants.blueConstants.trap1Y : Constants.autoConstants.redConstants.trap1Y, desiredAngle);
             //Turn to prep for shooting into trap1
-            double relativeX = gameConstants.trapX1 - robotPosition[0];
+            /*double relativeX = gameConstants.trapX1 - robotPosition[0];
             double relativeY = (blue ? gameConstants.blueConstants.trapY1 : gameConstants.redConstants.trapY1) - robotPosition[1];
-            double originalAngle = ((Math.atan2(relativeY, relativeX) + 3 * Math.PI / 2) % (Math.PI * 2)) * 180 / Math.PI;
+            double originalAngle = ((Math.atan2(relativeY, relativeX) - 3 * Math.PI / 2)) * 180 / Math.PI;
             double desiredAngle = blue ? Math.max(Math.min(gameConstants.blueConstants.maxTrap1Angle, originalAngle), gameConstants.blueConstants.minTrap1Angle) : Math.max(Math.min(gameConstants.redConstants.maxTrap1Angle, originalAngle), gameConstants.redConstants.minTrap1Angle);
-            double desiredTurnInput = turnPIDController.calculate(desiredAngle, getReducedAngle()) / 180d;
+            double desiredTurnInput = turnPIDController.calculate(getReducedAngle(), desiredAngle) / 180d;
 
-            inputs[2] = desiredTurnInput;
+            inputs[2] = desiredTurnInput * 5;
 
             if(Math.abs(desiredTurnInput) < Constants.driveControllerStopBelowThis) {
                 SmartDashboard.putString("Heading Status: ", "HEADING READY");
@@ -221,16 +235,23 @@ public class SwerveMaster {
                 SmartDashboard.putString("Angle Range Status: ", "ANGLE RANGE READY");
             } else {
                 SmartDashboard.putString("Angle Range Status: ", "NOT YET");
-            }
+            }*/
         } else if(controller.getTriangleButton()) {
+            selfDrive = true;
+            double relativeX = Constants.gameConstants.trapX2 - robotPosition[0];
+            double relativeY = (blue ? Constants.gameConstants.blueConstants.trapY2 : Constants.gameConstants.redConstants.trapY2) - robotPosition[1];
+            double originalAngle = (Math.atan2(-relativeX, relativeY)) * 180 / Math.PI;
+            double desiredAngle = blue ? Math.max(Math.min(Constants.gameConstants.blueConstants.maxTrap2Angle, originalAngle), Constants.gameConstants.blueConstants.minTrap2Angle) : Math.max(Math.min(Constants.gameConstants.redConstants.maxTrap2Angle, originalAngle), Constants.gameConstants.redConstants.maxTrap2Angle);
+
+            driveTo(Constants.autoConstants.trap2X, blue ? Constants.autoConstants.blueConstants.trap2Y : Constants.autoConstants.redConstants.trap2Y, desiredAngle);
             //Turn to prep for shooting into trap2
-            double relativeX = gameConstants.trapX2 - robotPosition[0];
+            /*double relativeX = gameConstants.trapX2 - robotPosition[0];
             double relativeY = (blue ? gameConstants.blueConstants.trapY2 : gameConstants.redConstants.trapY2) - robotPosition[1];
-            double originalAngle = ((Math.atan2(relativeY, relativeX) + 3 * Math.PI / 2) % (Math.PI * 2)) * 180 / Math.PI;
+            double originalAngle = ((Math.atan2(relativeY, relativeX) - 3 * Math.PI / 2)) * 180 / Math.PI;
             double desiredAngle = blue ? Math.max(Math.min(gameConstants.blueConstants.maxTrap2Angle, originalAngle), gameConstants.blueConstants.minTrap2Angle) : Math.max(Math.min(gameConstants.redConstants.maxTrap2Angle, originalAngle), gameConstants.redConstants.minTrap2Angle);
-            double desiredTurnInput = turnPIDController.calculate(desiredAngle, getReducedAngle()) / 180d;
+            double desiredTurnInput = turnPIDController.calculate(getReducedAngle(), desiredAngle) / 180d;
 
-            inputs[2] = desiredTurnInput;
+            inputs[2] = desiredTurnInput * 5;
 
             if(Math.abs(desiredTurnInput) < Constants.driveControllerStopBelowThis) {
                 SmartDashboard.putString("Heading Status: ", "HEADING READY");
@@ -242,16 +263,44 @@ public class SwerveMaster {
                 SmartDashboard.putString("Angle Range Status: ", "ANGLE RANGE READY");
             } else {
                 SmartDashboard.putString("Angle Range Status: ", "NOT YET");
-            }
+            }*/
         } else if(controller.getOptionsButton()) {
-            //Turn to prep for shooting into trap3
-            double relativeX = gameConstants.trapX3 - robotPosition[0];
-            double relativeY = (blue ? gameConstants.blueConstants.trapY3 : gameConstants.redConstants.trapY3) - robotPosition[1];
-            double originalAngle = ((Math.atan2(relativeY, relativeX) + 3 * Math.PI / 2) % (Math.PI * 2)) * 180 / Math.PI;
-            double desiredAngle = blue ? Math.max(Math.min(gameConstants.blueConstants.maxTrap3Angle, originalAngle), gameConstants.blueConstants.minTrap3Angle) : Math.max(Math.min(gameConstants.redConstants.maxTrap3Angle, originalAngle), gameConstants.redConstants.minTrap3Angle);
-            double desiredTurnInput = turnPIDController.calculate(desiredAngle, getReducedAngle()) / 180d;
+            selfDrive = true;
+            double relativeX = Constants.gameConstants.trapX3 - robotPosition[0];
+            double relativeY = (blue ? Constants.gameConstants.blueConstants.trapY3 : Constants.gameConstants.redConstants.trapY3) - robotPosition[1];
+            double originalAngle = (Math.atan2(-relativeX, relativeY)) * 180 / Math.PI;
+            double desiredAngle = blue ? Math.max(Math.min(Constants.gameConstants.blueConstants.maxTrap3Angle, originalAngle), Constants.gameConstants.blueConstants.minTrap3Angle) : Math.max(Math.min(Constants.gameConstants.redConstants.maxTrap3Angle, originalAngle), Constants.gameConstants.redConstants.maxTrap3Angle);
 
-            inputs[2] = desiredTurnInput;
+            driveTo(Constants.autoConstants.trap3X, blue ? Constants.autoConstants.blueConstants.trap3Y : Constants.autoConstants.redConstants.trap3Y, desiredAngle);
+            //Turn to prep for shooting into trap3
+            /*double relativeX = gameConstants.trapX3 - robotPosition[0];
+            double relativeY = (blue ? gameConstants.blueConstants.trapY3 : gameConstants.redConstants.trapY3) - robotPosition[1];
+            double originalAngle = ((Math.atan2(relativeY, relativeX) - 3 * Math.PI / 2)) * 180 / Math.PI;
+            double desiredAngle = blue ? Math.max(Math.min(gameConstants.blueConstants.maxTrap3Angle, originalAngle), gameConstants.blueConstants.minTrap3Angle) : Math.max(Math.min(gameConstants.redConstants.maxTrap3Angle, originalAngle), gameConstants.redConstants.minTrap3Angle);
+            double desiredTurnInput = turnPIDController.calculate(getReducedAngle(), desiredAngle) / 180d;
+
+            inputs[2] = desiredTurnInput * 5;
+
+            if(Math.abs(desiredTurnInput) < Constants.driveControllerStopBelowThis) {
+                SmartDashboard.putString("Heading Status: ", "HEADING READY");
+            } else {
+                SmartDashboard.putString("Heading Status: ", "NOT YET");
+            }
+
+            if(desiredAngle == originalAngle) {
+                SmartDashboard.putString("Angle Range Status: ", "ANGLE RANGE READY");
+            } else {
+                SmartDashboard.putString("Angle Range Status: ", "NOT YET");
+            }*/
+        }/* else if(controller.getTouchpad()) {
+            //Turn to prep for shooting into rapid firing
+            double relativeX = gameConstants.rapidX - robotPosition[0];
+            double relativeY = (blue ? gameConstants.blueConstants.rapidY : gameConstants.redConstants.rapidY) - robotPosition[1];
+            double originalAngle = (Math.atan2(-relativeX, relativeY)) * 180 / Math.PI;
+            double desiredAngle = blue ? Math.max(Math.min(gameConstants.blueConstants.maxRapidAngle, originalAngle), gameConstants.blueConstants.minRapidAngle) : Math.max(Math.min(gameConstants.redConstants.maxRapidAngle, originalAngle), gameConstants.redConstants.minRapidAngle);
+            double desiredTurnInput = turnPIDController.calculate(getReducedAngle(), desiredAngle) / 180d;
+
+            inputs[2] = desiredTurnInput / turnFactor;
 
             if(Math.abs(desiredTurnInput) < Constants.driveControllerStopBelowThis) {
                 SmartDashboard.putString("Heading Status: ", "HEADING READY");
@@ -264,7 +313,7 @@ public class SwerveMaster {
             } else {
                 SmartDashboard.putString("Angle Range Status: ", "NOT YET");
             }
-        } else {
+        }*/ else {
             SmartDashboard.putString("Heading Status: ", "NOT YET");
             SmartDashboard.putString("Angle Range Status: ", "NOT YET");
         }
@@ -274,14 +323,27 @@ public class SwerveMaster {
         inputs[1] *= driveFactor;
         inputs[2] *= turnFactor; 
 
+        /*if(!blue) {
+            inputs[0] *= -1;
+            inputs[1] *= -1;
+        }*/
+
+        inputs[0] *= -1;
+        inputs[1] *= -1;
+
         //Call the main method for teleop
-        if (!pathing) {
+        if(!selfDrive) {
+            drive(inputs, 
+            new double[]{leftUpModule.getAbsoluteTurnPosition(), leftDownModule.getAbsoluteTurnPosition(), rightUpModule.getAbsoluteTurnPosition(), rightDownModule.getAbsoluteTurnPosition()}, 
+            0, driveFactor, turnFactor);
+        }
+        /*if (!pathing) {
             drive(inputs, 
             new double[]{leftUpModule.getAbsoluteTurnPosition(), leftDownModule.getAbsoluteTurnPosition(), rightUpModule.getAbsoluteTurnPosition(), rightDownModule.getAbsoluteTurnPosition()}, 
             this.getReducedAngle(), driveFactor, turnFactor);
         } else { //If path planning, call path planning method instead
 
-        }
+        }*/
     }
 
     //Sets motor speeds given the drive and turn motor speeds
@@ -293,7 +355,16 @@ public class SwerveMaster {
     }
 
     public void resetAccelerometer() {
+        accelerometer.setAngleAdjustment(0d);
         accelerometer.reset();
+
+        for(int i = 0; i < 10 && accelerometer.isCalibrating(); i++) {
+            try {
+                Thread.sleep(10);
+            } catch(InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
     }
 
     public boolean accelerometerIsCalibrating() {
@@ -303,7 +374,7 @@ public class SwerveMaster {
     //Gets the angle the robot is facing from 0 - 360 degrees
     public double getReducedAngle() {
         //You've got to be joking the darn navx is cw positive when we need ccw positive readings
-        double temp = -accelerometer.getAngle();
+        double temp = -accelerometer.getAngle() - angleOffset;
         
         //Just making sure the range is 0 - 360
         while(temp <= 0) {
@@ -313,7 +384,23 @@ public class SwerveMaster {
             temp -= 360;
         }
 
-        return temp;
+        SmartDashboard.putNumber("Reduced Yaw: ", temp);
+
+        /*temp = pigeon.getAngle() - angleOffset;
+
+        while(temp <= 0) {
+            temp += 360;
+        }
+        while(temp > 360) {
+            temp -= 360;
+        }
+
+        SmartDashboard.putNumber("Pigeon Reading: ", temp);*/
+        SmartDashboard.putNumber("Pigeon Pitch: ", pigeon.getPitch().getValueAsDouble());
+        SmartDashboard.putNumber("Pigeon Roll: ", pigeon.getRoll().getValueAsDouble());
+        SmartDashboard.putNumber("Pigeon Yaw: ", pigeon.getYaw().getValueAsDouble());
+
+        return 360;
     }
 
     public Rotation2d getRotation2d() {
@@ -329,13 +416,13 @@ public class SwerveMaster {
         }
 
         //Smart Dashboard stuff to track variables
-        SmartDashboard.putNumber("Yaw: ", accelerometer.getYaw());
-        SmartDashboard.putNumber("Reduced Yaw: ", reducedAngle);
+        //SmartDashboard.putNumber("Yaw: ", accelerometer.getYaw());
+        //SmartDashboard.putNumber("Reduced Yaw: ", reducedAngle);
 
-        SmartDashboard.putNumber("Current 0 Angle: ", leftUpModule.getAbsoluteTurnPosition());
+        /*SmartDashboard.putNumber("Current 0 Angle: ", leftUpModule.getAbsoluteTurnPosition());
         SmartDashboard.putNumber("Current 1 Angle: ", leftDownModule.getAbsoluteTurnPosition());
         SmartDashboard.putNumber("Current 2 Angle: ", rightUpModule.getAbsoluteTurnPosition());
-        SmartDashboard.putNumber("Current 3 Angle: ", rightDownModule.getAbsoluteTurnPosition());
+        SmartDashboard.putNumber("Current 3 Angle: ", rightDownModule.getAbsoluteTurnPosition());*/
         
         //Create the arrays that will hold the drive and turn motor speeds
         double driveSets[] = new double[]{0d, 0d, 0d, 0d};
@@ -350,9 +437,9 @@ public class SwerveMaster {
         double adjustedY = -inputs[1] / (Math.abs(inputs[0]) + Math.abs(inputs[2]) + 1);
         double adjustedOmega = inputs[2] / (Math.abs(inputs[1]) + Math.abs(inputs[0]) + 1);
 
-        SmartDashboard.putNumber("Adjusted X: ", adjustedX);
+        /*SmartDashboard.putNumber("Adjusted X: ", adjustedX);
         SmartDashboard.putNumber("Adjusted Y: ", adjustedY);
-        SmartDashboard.putNumber("Adjusted Omega: ", adjustedOmega);
+        SmartDashboard.putNumber("Adjusted Omega: ", adjustedOmega);*/
         
 
         //The desired global translational vector of each wheel as described by angle and magnitude
@@ -474,7 +561,7 @@ public class SwerveMaster {
             driveSets[i] = driveSetInvert * -desiredMagnitude[i];
             
             //Debugging purposes
-            SmartDashboard.putNumber("Trans Ang " + i + ": ", translationalAngles[i]);
+            /*SmartDashboard.putNumber("Trans Ang " + i + ": ", translationalAngles[i]);
             SmartDashboard.putNumber("Trans Mag " + i + ": ", translationalMagnitude[i]);
             SmartDashboard.putNumber("Rot Ang " + i + ": ", rotationalAngles[i]);
             SmartDashboard.putNumber("Rot Mag " + i + ": ", rotationalMagnitude[i]);
@@ -483,21 +570,21 @@ public class SwerveMaster {
             SmartDashboard.putNumber("Desired Ang " + i + ": ", desiredAngle[i]);
             SmartDashboard.putNumber("Desired Mag " + i + ": ", desiredMagnitude[i]);
             SmartDashboard.putNumber("Turn Set " + i + ": ", turnSets[i]);
-            SmartDashboard.putNumber("Drive Set " + i + ": ", driveSets[i]);
+            SmartDashboard.putNumber("Drive Set " + i + ": ", driveSets[i]);*/
         }
 
         //Odometry - Update the position of the robot using the angle the robot is facing
         // and the velocity of the wheels
-        updateRobotPosition(getReducedAngle());
-        updateRobotVelocity();
+        //updateRobotPosition(getReducedAngle());
+        //updateRobotVelocity();
 
         //Odometry - Checking position of robot
         SmartDashboard.putNumber("Robot X", robotPosition[0]);
         SmartDashboard.putNumber("Robot Y", robotPosition[1]);
 
         //Pathplanner - Send information to network table
-        sendPose2dtoNetwork();
-        sendChassisSpeedstoNetwork();
+        //sendPose2dtoNetwork();
+        //sendChassisSpeedstoNetwork();
         //jetsonClient.flush();
 
         //Set the wheel speeds
@@ -510,9 +597,9 @@ public class SwerveMaster {
     //Odometry - Reset origin with new robot position given x and y in meters
     //Also needs gyro to be reset
     public void resetPose(double x, double y, double angleAdjustment) {
-        resetRobotPosition(x, y);
         resetAccelerometer();
-        accelerometer.setAngleAdjustment(angleAdjustment);
+        resetRobotPosition(x, y);
+        angleOffset = angleAdjustment;
         leftUpModule.resetPosition(Constants.leftUpStartPos);
         leftDownModule.resetPosition(Constants.leftDownStartPos);
         rightUpModule.resetPosition(Constants.rightUpStartPos);
@@ -536,22 +623,24 @@ public class SwerveMaster {
     //Odometry - Update robot position. 
     //Should be called as often as possible for less error
     public void updateRobotPosition(double reducedAngle) {
-        if(CameraMaster.cameraPoseLock.get()) {
-            try {
-                CameraMaster.cameraPoseLock.wait(20);
-            } catch(InterruptedException e) {
-                e.printStackTrace();
-            }
+        double[][] changes = new double[][]{leftUpModule.changeInPosition(), leftDownModule.changeInPosition(), rightUpModule.changeInPosition(), rightDownModule.changeInPosition()};
+        double totalX = 0d;
+        double totalY = 0d;
+
+        for(int i = 0; i < changes.length; i++) {
+            totalX += changes[i][0];
+            totalY += changes[i][1];
         }
 
-        if(CameraMaster.updatedPose) {
-            CameraMaster.cameraPoseLock.set(true);
-            //Get values
-            CameraMaster.cameraPoseLock.set(false);
-            CameraMaster.cameraPoseLock.notifyAll();
+        if(Math.abs(totalX - accelerometer.getDisplacementX()) > Constants.accelerometerOdometerTolerancePosition || 
+            Math.abs(totalY - accelerometer.getDisplacementY()) > Constants.accelerometerOdometerTolerancePosition) {
+            robotPosition[0] += accelerometer.getDisplacementX();
+            robotPosition[1] += accelerometer.getDisplacementY();
+        } else {
+            robotPosition[0] += totalX;
+            robotPosition[1] += totalY;
         }
-        
-        double[] leftUpPos = leftUpModule.getPosition(reducedAngle);
+        /*double[] leftUpPos = leftUpModule.getPosition(reducedAngle);
         double[] leftDownPos = leftDownModule.getPosition(reducedAngle);
         double[] rightUpPos = rightUpModule.getPosition(reducedAngle);
         double[] rightDownPos = rightDownModule.getPosition(reducedAngle);
@@ -565,13 +654,61 @@ public class SwerveMaster {
         //Displacement X/Y might be flipped
         double[] accelerometerCenter = new double[]{accelerometer.getDisplacementX() + robotPosition[0], accelerometer.getDisplacementY() + robotPosition[1]};
         robotPosition[0] = Math.abs(wheelCenter[0] - accelerometerCenter[0]) > Constants.accelerometerOdometerTolerancePosition ? accelerometerCenter[0] : wheelCenter[0];
-        robotPosition[1] = Math.abs(wheelCenter[1] - accelerometerCenter[1]) > Constants.accelerometerOdometerTolerancePosition ? accelerometerCenter[1] : wheelCenter[1];
+        robotPosition[1] = Math.abs(wheelCenter[1] - accelerometerCenter[1]) > Constants.accelerometerOdometerTolerancePosition ? accelerometerCenter[1] : wheelCenter[1];*/
+        /*robotPosition[0] -= accelerometer.getDisplacementX();
+        robotPosition[1] -= accelerometer.getDisplacementY();
+        accelerometer.resetDisplacement();*/
+        double angleChange = getReducedAngle() - prevAngle;
+        if(Math.abs(getReducedAngle() - (prevAngle + 360)) < Math.abs(angleChange)) {
+            angleChange = getReducedAngle() - (prevAngle + 360);
+        }
+        if(Math.abs(getReducedAngle() - (prevAngle - 360)) < Math.abs(angleChange)) {
+            angleChange = getReducedAngle() - (prevAngle - 360);
+        }
+        //robotChangeList.add(new double[]{robotPosition[0] - prevPosition[0], robotPosition[1] - prevPosition[1], angleChange, Timer.getFPGATimestamp()});
+        //System.out.println(CameraMaster.cameraPoseLock.get());
+
+        /*if(!CameraMaster.cameraPoseLock.get()) {
+            if(CameraMaster.updatedPose) {
+                CameraMaster.cameraPoseLock.set(true);
+                double x = CameraMaster.updatedX;
+                double y  = CameraMaster.updatedY;
+                double angle = CameraMaster.updatedHeading;
+                double time = CameraMaster.updateTime;
+                CameraMaster.updatedPose = false;
+                CameraMaster.cameraPoseLock.set(false);
+                //System.out.println(x + "---" + y);
+
+                for(int i = robotChangeList.size() - 1; i >= 0 && robotChangeList.get(i)[3] >= time; i--) {
+                    x += robotChangeList.get(i)[0];
+                    y += robotChangeList.get(i)[1];
+                    angle += robotChangeList.get(i)[2];
+                }
+
+                while(angle <= 0) {
+                    angle += 360;
+                }
+                while(angle > 360) {
+                    angle -= 360;
+                }
+
+                resetPose(x, y, angle);
+                robotChangeList.clear();
+                //System.out.println("Reset position");
+                //System.out.println(x + "---" + y);
+            }
+        }*/
 
         accelerometer.resetDisplacement();
+        prevAngle = getReducedAngle();
+        prevPosition[0] = robotPosition[0];
+        prevPosition[1] = robotPosition[1];
 
         //Reset position of wheels with new center
         //Have to account for which direction the robot is facing
-        alignModules(reducedAngle);
+        alignModules(getReducedAngle());
+
+        //System.out.println(robotPosition[0] + ", " + robotPosition[1]);
     }
 
     //Odometry - Reset position of wheels with new center
@@ -582,8 +719,32 @@ public class SwerveMaster {
         rightDownModule.alignPosition(robotPosition, reducedAngle, Constants.rightDownStartPos);
     }
 
+    public boolean driveTo(double x, double y, double angle) {
+        double xInput = blue ? x - robotPosition[0] : robotPosition[0] - x;
+        double yInput = blue ? y - robotPosition[1] : robotPosition[1] - y; 
+        double angleInput = turnPIDController.calculate(getReducedAngle(), angle);
+
+        if(Math.abs(robotPosition[0] - x) < Constants.autoConstants.positionTolerance) {
+            xInput = 0;
+        }
+        if(Math.abs(robotPosition[1] - y) < Constants.autoConstants.positionTolerance) {
+            yInput = 0;
+        }
+        if(Math.abs(getReducedAngle() - angle) < Constants.autoConstants.turnTolerance) {
+            angleInput = 0;
+        }
+
+        drive(new double[]{Math.max(-1, Math.min(1, xInput / Constants.maxTranslationalSpeed * 0.25)), Math.max(-1, Math.min(1, yInput / Constants.maxTranslationalSpeed * 0.25)), Math.max(-1, Math.min(1, (angleInput) * Math.PI / 180 / Constants.maxAngularSpeed * 0.25))},
+            new double[]{leftUpModule.getAbsoluteTurnPosition(), leftDownModule.getAbsoluteTurnPosition(), rightUpModule.getAbsoluteTurnPosition(), rightDownModule.getAbsoluteTurnPosition()}, 
+            getReducedAngle(), 1.0, 1.0);
+
+         return Math.abs(robotPosition[0] - x) < Constants.autoConstants.positionTolerance && 
+            Math.abs(robotPosition[1] - y) < Constants.autoConstants.positionTolerance && 
+            Math.abs(getReducedAngle() - angle) < Constants.autoConstants.turnTolerance;
+    }
+
     //Odometry - Calculate and return the x and y velocity of robot as [xVel, yVel] in m/s
-    public double[] updateRobotVelocity() {
+    /*public double[] updateRobotVelocity() {
         //Get current time
         double currTime = System.currentTimeMillis();
 
@@ -620,7 +781,7 @@ public class SwerveMaster {
     }
 
     //Odometry - Calculate and return omega (angular velocity) in radians per second
-    public double getOmega() {
+    /*public double getOmega() {
         //Get current time
         double currTime = System.currentTimeMillis();
 
@@ -664,5 +825,5 @@ public class SwerveMaster {
         //Send speeds to network table
         //ChassisSpeeds​(double vxMetersPerSecond, double vyMetersPerSecond, double omegaDegreesPerSecond)
         chassisPublisher.set(new double[]{robotVelocity[0], robotVelocity[1], omega});
-    }
+    }*/
 }

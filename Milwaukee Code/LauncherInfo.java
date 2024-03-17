@@ -56,6 +56,9 @@ public class LauncherInfo {
                 Math.abs(distance - other.distance) / Math.abs(this.distance - other.distance) * other.speeds[i];
         }
 
+        /*System.out.println(this.speeds[0] + "\t" + other.speeds[0] + "\t" + output.speeds[0] + "\t" + distance);
+        System.out.println(this.angles[0] + "\t" + other.angles[0] + "\t" + output.angles[0] + "\t" + output.angles[0]);*/
+
         return output;
     }
 }

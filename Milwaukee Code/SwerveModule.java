@@ -34,11 +34,9 @@ public class SwerveModule {
     private double driveMaxAccel;
     private double turnMaxAccel;
 
+    private double prevPos;
+
     public SwerveModule(int driveMotorID, int turnMotorID, int turnEncoderID, boolean driveMotorInvert, boolean turnMotorInvert, boolean encoderInvert, double offsetAngle, double driveMaxAccel, double turnMaxAccel) {
-        /*NetworkTableInstance inst = NetworkTableInstance.create();
-        inst.startServer();
-        SmartDashboard.setNetworkTableInstance(inst);*/
-        
         driveMotor = new CANSparkMax(driveMotorID, MotorType.kBrushless);
         turnMotor = new CANSparkMax(turnMotorID, MotorType.kBrushless);
         driveRelative = driveMotor.getEncoder();
@@ -56,6 +54,8 @@ public class SwerveModule {
 
         this.driveMaxAccel = driveMaxAccel;
         this.turnMaxAccel = turnMaxAccel;
+
+        prevPos = getDrivePosition();
     }
 
     //Returns a SwerveModuleState representation of this SwerveModule
@@ -67,8 +67,6 @@ public class SwerveModule {
     public void set(double driveSet, double turnSet) {
         driveMotor.set(Math.abs(driveSet - driveMotor.get()) > driveMaxAccel ? Math.signum(driveSet - driveMotor.get()) * driveMaxAccel + driveMotor.get() : driveSet);
         turnMotor.set(Math.abs(turnSet - turnMotor.get()) > turnMaxAccel ? Math.signum(turnSet - turnMotor.get()) * turnMaxAccel + turnMotor.get() : turnSet);
-        /*driveMotor.set(driveSet);
-        turnMotor.set(turnSet);*/
     }
 
     //Metres position of the drive talon
@@ -141,7 +139,7 @@ public class SwerveModule {
         //Find out angle and distance from origin of initial
         //Polar coordinates
         double distance = Math.sqrt(Math.pow(initial[0], 2) + Math.pow(initial[1], 2));
-        double angle = Math.atan2(initial[1], initial[0]) + Math.PI * 2 - Math.PI / 2;
+        double angle = Math.atan2(initial[0], initial[1]) + Math.PI * 2 - Math.PI / 2;
 
         //Convert to degrees
         angle *= 180 / Math.PI;
@@ -164,5 +162,29 @@ public class SwerveModule {
         //Add robot values and set the new positions
         currPos[0] = center[0] + adjustedX;
         currPos[1] = center[1] + adjustedY;
+    }
+
+    //X, Y
+    public double[] changeInPosition() {
+        double currPos = getDrivePosition();
+        double angle = getAbsoluteTurnPosition();
+
+        angle -= 90;
+
+        while(angle < 0) {
+            angle += 360;
+        }
+
+        while(angle >= 360) {
+            angle -= 360;
+        }
+
+        double radius = (currPos - prevPos) * Constants.motorConstants.driveConstants.metresPerRotation;
+
+        double[] output = new double[]{Math.cos(angle * Math.PI / 180) * radius, Math.sin(angle * Math.PI / 180) * radius};
+
+        prevPos = currPos;
+
+        return output;
     }
 }

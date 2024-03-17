@@ -6,10 +6,10 @@ import java.util.ArrayList;
 
 import com.revrobotics.CANSparkLowLevel.MotorType;
 
-import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DutyCycleEncoder;
 import edu.wpi.first.wpilibj.PS4Controller;
 import edu.wpi.first.wpilibj.RobotController;
+import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.robot.Constants.armConstants;
 import frc.robot.Constants.gameConstants;
@@ -25,31 +25,28 @@ public class ArmMaster {
     //voltage, Timer.getFPGATimeStamp()
     public ArrayList<double[]> voltageList;
     //Max voltage in the list, make sure to min(max()) it with 11.3 and 12.7
-    public double maxVoltage;
+    public int maxVoltage;
 
     public ArmMaster() {
-        /*NetworkTableInstance inst = NetworkTableInstance.create();
-        inst.startServer();
-        SmartDashboard.setNetworkTableInstance(inst);*/
-        
         launcherAngle = new CANSparkMax(armConstants.IDs.launcherAngle, MotorType.kBrushless);
         angleEncoder = new DutyCycleEncoder(armConstants.IDs.angleEncoder);
         angleEncoderOffset = armConstants.angleEncoderOffset;
         myIntake = new Intake();
         myLauncher = new Launcher();
         myLauncherInfoMaster = new LauncherInfoMaster();
-        blue = DriverStation.getAlliance().get() == DriverStation.Alliance.Blue;
+        blue = false;
+
         voltageList = new ArrayList<double[]>();
-        maxVoltage = 11.3;
+        maxVoltage = 113;
 
         launcherAngle.setInverted(armConstants.motorInversion.launcherAngle);
 
-        SmartDashboard.putNumber("Info: Distance: ", 0d);
+        /*SmartDashboard.putNumber("Info: Distance: ", 0d);
         SmartDashboard.putNumber("Info: Speed: ", 0d);
         SmartDashboard.putBoolean("Update Speaker Info: ", false);
         SmartDashboard.putBoolean("Update Amp Info: ", false);
         SmartDashboard.putBoolean("Update Trap Info: ", false);
-        SmartDashboard.putBoolean("Save New Info: ", false);
+        SmartDashboard.putBoolean("Save New Info: ", false);*/
 
         SmartDashboard.putString("Launcher Status: ", "NOT YET");
         SmartDashboard.putString("Arm Angle Status: ", "NOT YET");
@@ -117,6 +114,7 @@ public class ArmMaster {
     }
 
     public void update(PS4Controller armController, double currX, double currY) {
+        updateVoltage();
         //Left joystick == angle
         //Right joystick == speed
         boolean hadRightInput = false;
@@ -125,8 +123,16 @@ public class ArmMaster {
         if(armController.getSquareButton()) {
             autoInput = true;
             //Prep arm for scoring into speaker
-            LauncherInfo info = myLauncherInfoMaster.get(Math.sqrt(Math.pow(currX - gameConstants.speakerX, 2) + Math.pow(currY - (blue ? gameConstants.blueConstants.speakerY : gameConstants.redConstants.speakerY), 2)), 0);
+            /*System.out.println(currX + "---" + currY);
+            System.out.println(gameConstants.speakerX + "---" + gameConstants.blueConstants.speakerY);
+            System.out.println(Math.sqrt(Math.pow(currX - gameConstants.speakerX, 2) + Math.pow(currY - (blue ? gameConstants.blueConstants.speakerY : gameConstants.redConstants.speakerY), 2)));*/
+            LauncherInfo info = myLauncherInfoMaster.get(Math.sqrt(Math.pow(currX - gameConstants.speakerX, 2) + Math.pow(currY - (blue ? gameConstants.blueConstants.speakerY : gameConstants.redConstants.speakerY), 2)), 0, maxVoltage);
+            //LauncherInfo info = myLauncherInfoMaster.launcherInfoList.get(0);
             prepLauncher(info.speeds[0]);
+
+            /*System.out.println(info.angles[0]);
+            System.out.println(info.distance);
+            System.out.println(info.voltage);*/
 
             if(Math.abs(info.angles[0] - getAngle()) < armConstants.angleTolerance) {
                 SmartDashboard.putString("Arm Angle Status: ", "ARM ANGLE READY");
@@ -139,19 +145,35 @@ public class ArmMaster {
             autoInput = true;
             //Prep arm for scoring into amp
             //LauncherInfo info = myLauncherInfoMaster.get(Math.sqrt(Math.pow(currX - gameConstants.ampX, 2) + Math.pow(currY - (blue ? gameConstants.blueConstants.ampY : gameConstants.redConstants.ampY), 2)), 1);
-            prepLauncher(0.15);
+            prepLauncher(0.11);
             
-            if(Math.abs(66.5 - getAngle()) < armConstants.angleTolerance) {
+            if(Math.abs(65.4 - getAngle()) < armConstants.angleTolerance) {
                 SmartDashboard.putString("Arm Angle Status: ", "ARM ANGLE READY");
                 changeAngle(0);
             } else {
                 SmartDashboard.putString("Arm Angle Status: ", "NOT YET");
-                changeAngle((66.5 - getAngle()) / 45);
+                changeAngle((65.4 - getAngle()) / 45);
             }
+
+            /*autoInput = true;
+            //Prep arm for scoring into amp/picking up from source/shooting from close up
+            //LauncherInfo info = myLauncherInfoMaster.get(Math.sqrt(Math.pow(currX - gameConstants.ampX, 2) + Math.pow(currY - (blue ? gameConstants.blueConstants.ampY : gameConstants.redConstants.ampY), 2)), 1);
+            prepLauncher(0.15);
+            
+            if(Math.abs(69d - getAngle()) < armConstants.angleTolerance) {
+                SmartDashboard.putString("Arm Angle Status: ", "ARM ANGLE READY");
+                changeAngle(0);
+            } else {
+                SmartDashboard.putString("Arm Angle Status: ", "NOT YET");
+                changeAngle((69d - getAngle()) / 45);
+            }*/
         } else if(armController.getCircleButton()) {
             autoInput = true;
             //Prep arm for intaking from source
-            intakeLauncher(0.15);
+            //intakeLauncher(0.15);
+            myLauncher.prepLauncher(Constants.armConstants.launcherIntakeSpeed);
+            myLauncher.setMiddle(Constants.armConstants.launcherIntakeSpeed);
+            myIntake.specialIntake();
 
             if(Math.abs(73.1 - getAngle()) < armConstants.angleTolerance) {
                 SmartDashboard.putString("Arm Angle Status: ", "ARM ANGLE READY");
@@ -160,12 +182,26 @@ public class ArmMaster {
                 SmartDashboard.putString("Arm Angle Status: ", "NOT YET");
                 changeAngle((73.1 - getAngle()) / 45);
             }
+
+            /*autoInput = true;
+            //Prep arm for scoring from farther away
+            //LauncherInfo info = myLauncherInfoMaster.get(Math.sqrt(Math.pow(currX - gameConstants.ampX, 2) + Math.pow(currY - (blue ? gameConstants.blueConstants.ampY : gameConstants.redConstants.ampY), 2)), 1);
+            prepLauncher(0.39);
+            
+            if(Math.abs(45d - getAngle()) < armConstants.angleTolerance) {
+                SmartDashboard.putString("Arm Angle Status: ", "ARM ANGLE READY");
+                changeAngle(0);
+            } else {
+                SmartDashboard.putString("Arm Angle Status: ", "NOT YET");
+                changeAngle((45d - getAngle()) / 45);
+            }*/
         } else if(armController.getTriangleButton()) {
-            //Prep arm for scoring across the arena
+            //Prep arm for launching across the arena
             autoInput = true;
-            intakeBottom();
+            /*intakeBottom();
             prepLauncher(0.64);
-            fireLauncher();
+            fireLauncher();*/
+            prepLauncher(Robot.fireFactor);
 
             if(Math.abs(65.8 - getAngle()) < armConstants.angleTolerance) {
                 SmartDashboard.putString("Arm Angle Status: ", "ARM ANGLE READY");
@@ -174,19 +210,19 @@ public class ArmMaster {
                 SmartDashboard.putString("Arm Angle Status: ", "NOT YET");
                 changeAngle((65.8 - getAngle()) / 45);
             }
-        } /*else if(armController.getOptionsButton()) {
-            //Prep arm for scoring into trap3
-            LauncherInfo info = myLauncherInfoMaster.get(Math.sqrt(Math.pow(currX - gameConstants.trapX3, 2) + Math.pow(currY - (blue ? gameConstants.blueConstants.trapY3 : gameConstants.redConstants.trapY3), 2)), 2);
-            prepLauncher(info.speeds[2]);
+        } else if(armController.getOptionsButton()) {
+            //Prep arm for scoring into trap
+            autoInput = true;
+            prepLauncher(0.37);
             
-            if(Math.abs(info.angles[2] - getAngle()) < armConstants.angleTolerance) {
+            if(Math.abs(78 - getAngle()) < armConstants.angleTolerance) {
                 SmartDashboard.putString("Arm Angle Status: ", "ARM ANGLE READY");
                 changeAngle(0);
             } else {
                 SmartDashboard.putString("Arm Angle Status: ", "NOT YET");
-                changeAngle((info.angles[2] - getAngle()) / 45);
+                changeAngle((78 - getAngle()) / 45);
             }
-        }*/ else {
+        } else {
             SmartDashboard.putString("Launcher Status: ", "NOT YET");
             SmartDashboard.putString("Arm Angle Status: ", "NOT YET");
             SmartDashboard.putString("Distance Range Status: ", "NOT YET");
@@ -215,23 +251,26 @@ public class ArmMaster {
             }
         } else if(armController.getPOV() == 270) {
             outtakeBottom();
+            myLauncher.stopLauncher();
+            myLauncher.setMiddle(Constants.armConstants.launcherIntakeSpeed);
         } else if(armController.getPOV() == 90) {
             intakeLauncher(Constants.armConstants.intakeIntakeSpeed * 2);
         } else if(armController.getPOV() == 135) {
             intakeBottom();
             intakeLauncher(Constants.armConstants.intakeIntakeSpeed * 2);
         } else if(armController.getPOV() == 0) {
+            intakeBottom();
             fireLauncher();
-            SmartDashboard.putNumber("Front Middle Current Speed: ", myLauncher.frontMiddleRoller.get());
+            /*SmartDashboard.putNumber("Front Middle Current Speed: ", myLauncher.frontMiddleRoller.get());
             SmartDashboard.putNumber("Back Middle Current Speed: ", myLauncher.backMiddleRoller.get());
             SmartDashboard.putNumber("Front Launcher Current Speed: ", myLauncher.frontLauncher.get());
-            SmartDashboard.putNumber("Back Launcher Current Speed: ", myLauncher.backLauncher.get());
+            SmartDashboard.putNumber("Back Launcher Current Speed: ", myLauncher.backLauncher.get());*/
         } else if(!hadRightInput && !autoInput) {
             stopLauncher();
             stopIntake();
         }
 
-        double distance = SmartDashboard.getNumber("Info: Distance: ", 0d);
+        /*double distance = SmartDashboard.getNumber("Info: Distance: ", 0d);
         double angle = getAngle();
         double speed = SmartDashboard.getNumber("Info: Speed: ", 0d);
         int voltage = (int) Math.round(RobotController.getBatteryVoltage() * 10);
@@ -259,6 +298,32 @@ public class ArmMaster {
             myLauncherInfoMaster.updateDataFile();
 
             SmartDashboard.putBoolean("Save New Info: ", false);
+        }*/
+    }
+
+    public void updateVoltage() {
+        int curr = (int) Math.round(RobotController.getBatteryVoltage() * 10);
+
+        if(curr > maxVoltage) {
+            maxVoltage = curr;
+        }
+
+        voltageList.add(new double[]{curr, Timer.getFPGATimestamp()});
+
+        while(Timer.getFPGATimestamp() - voltageList.get(0)[1] >= 20) {
+            if(voltageList.remove(0)[0] == maxVoltage) {
+                maxVoltage = 113;
+
+                for(int i = 0; i < voltageList.size() && maxVoltage < 127; i++) {
+                    if(voltageList.get(i)[0] > maxVoltage) {
+                        maxVoltage = (int) Math.round(voltageList.get(i)[0]);
+                    }
+                }
+
+                if(maxVoltage > 127) {
+                    maxVoltage = 127;
+                }
+            }
         }
     }
 }

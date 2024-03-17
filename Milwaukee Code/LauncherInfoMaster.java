@@ -7,19 +7,14 @@ import java.util.Arrays;
 import java.util.List;
 
 import edu.wpi.first.wpilibj.Filesystem;
-import edu.wpi.first.wpilibj.RobotController;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
 public class LauncherInfoMaster {
     public List<String> launcherInfoStrings;
     public List<LauncherInfo> launcherInfoList;
-    public String newData;
+    //public String newData;
 
     public LauncherInfoMaster() {
-        /*NetworkTableInstance inst = NetworkTableInstance.create();
-        inst.startServer();
-        SmartDashboard.setNetworkTableInstance(inst);*/
-        
         launcherInfoStrings = new ArrayList<String>();
         launcherInfoList = new ArrayList<LauncherInfo>();
         
@@ -62,11 +57,10 @@ public class LauncherInfoMaster {
             e.printStackTrace();
         }
 
-        newData = "";
+        //newData = "";
     }
 
-    public LauncherInfo get(double distance, int index) {
-        int currVoltage = (int) Math.round(RobotController.getBatteryVoltage() * 10);
+    public LauncherInfo get(double distance, int index, int currVoltage) {
         int minVoltageIndex = 0;
         int maxVoltageIndex = 0;
 
@@ -76,30 +70,38 @@ public class LauncherInfoMaster {
             SmartDashboard.putString("Voltage Range Status: ", "NOT YET");
             minVoltageIndex = launcherInfoList.size() - 1;
         } else {
-            for(int i = 0; i < launcherInfoList.size(); i++) {
+            for(int i = 0; i < launcherInfoList.size() && launcherInfoList.get(i).voltage <= currVoltage; i++) {
                 if(launcherInfoList.get(i).voltage < currVoltage) {
                     minVoltageIndex++;
-                } else {
-                    break;
                 }
             }
+
+            minVoltageIndex++;
 
             maxVoltageIndex = minVoltageIndex;
 
             for(int i = minVoltageIndex; i < launcherInfoList.size() && launcherInfoList.get(i).voltage == launcherInfoList.get(minVoltageIndex).voltage; i++) {
                 maxVoltageIndex++;
             }
+
+            maxVoltageIndex--;
+
+            //System.out.println(minVoltageIndex + "\t" + maxVoltageIndex);
         }
+
+        //System.out.println(distance + "\t\t" + launcherInfoList.get(minVoltageIndex).distance + "\t\t" + launcherInfoList.get(maxVoltageIndex).distance);
 
         if(launcherInfoList.get(minVoltageIndex).distance <= distance && launcherInfoList.get(maxVoltageIndex).distance >= distance) {
             SmartDashboard.putString("Voltage Range Status: ", "VOLTAGE RANGE READY");
             int bottomIndex = minVoltageIndex;
 
-            for(int i = bottomIndex; i <= maxVoltageIndex && launcherInfoList.get(i).distance <= distance; i++) {
+            for(int i = bottomIndex + 1; i <= maxVoltageIndex && launcherInfoList.get(i).distance <= distance; i++) {
                 if(launcherInfoList.get(i).distance < distance) {
                     bottomIndex++;
                 }
             }
+
+            //System.out.println(bottomIndex + "\t" + launcherInfoList.get(bottomIndex + 1).distance);
 
             if(launcherInfoList.get(bottomIndex).distance == distance) {
                 if(launcherInfoList.get(bottomIndex).has[index]) {
@@ -110,6 +112,7 @@ public class LauncherInfoMaster {
 
                 return launcherInfoList.get(bottomIndex);
             } else {
+                //System.out.println("Interpolating...");
                 LauncherInfo temp = launcherInfoList.get(bottomIndex).interpolateDistance(launcherInfoList.get(bottomIndex + 1), distance);
 
                 if(temp.has[index]) {
@@ -162,7 +165,7 @@ public class LauncherInfoMaster {
         }
     }
 
-    public void storeSpeaker(int voltage, double distance, double angle, double speed) {
+    /*public void storeSpeaker(int voltage, double distance, double angle, double speed) {
         String launcherString = "v:" + voltage + "d:" + distance + "a0:" + angle + "a1:0a2:0s0:" + speed + "s1:0s2:0?YNN!";
         LauncherInfo actualInfo = new LauncherInfo(voltage, distance, new double[]{angle, 0d, 0d}, new double[]{speed, 0d, 0d}, new boolean[]{true, false, false});
         int voltageIndex = 0;
@@ -276,15 +279,7 @@ public class LauncherInfoMaster {
     }
 
     public void updateDataFile() {
-        /*String fullFileString = "";
-        String filePath = "C:/robotData/launcherExperimentData.txt";
-        for(int i = 0; i < launcherInfoStrings.size(); i++) {
-            fullFileString += launcherInfoStrings.get(i) + "\n";
-        }
-
-        SmartDashboard.putString("File Write Path", filePath);
-        SmartDashboard.putString("File Write Contents", fullFileString);*/
         SmartDashboard.putString("File Write Contents", newData);
         newData = "";
-    }
+    }*/
 }

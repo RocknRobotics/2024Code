@@ -31,10 +31,26 @@ public final class Constants {
     public static final double accelerometerOdometerToleranceVelocity = 1;
 
     public static final class autoConstants {
+        public static final double trap1X = 4.093 + Math.cos(0) * 0;
+        public static final double trap2X = 3.740 + Math.cos(120) * 0;
+        public static final double trap3X = 4.445 + Math.cos(240) * 0;
+
+        public static final class blueConstants {
+            public static final double trap1Y = 5.275 + Math.sin(0) * 0;
+            public static final double trap2Y = 4.664 + Math.sin(120) * 0;
+            public static final double trap3Y = 4.664 + Math.sin(240) * 0;
+        }
+        public static final class redConstants {
+            public static final double trap1Y = 11.266 + Math.sin(180) * 0d;
+            public static final double trap2Y = 11.877 + Math.sin(300) * 0d;
+            public static final double trap3Y = 11.877 + Math.sin(60) * 0d;
+        }
+        //Metres
+        public static final double positionTolerance = 0.15;
         //Times to backup at certain positions
-        public static double backupTimeLeft = 3;        
-        public static double backupTimeCenter = 3;
-        public static double backupTimeRight = 3;
+        public static double backupTimeLeft = 6;
+        public static double backupTimeCenter = 6;
+        public static double backupTimeRight = 6;
 
         //Speeds to backup at certain positions
         public static double backupSpeedLeft = 0.25;        
@@ -42,18 +58,35 @@ public final class Constants {
         public static double backupSpeedRight = 0.25;
 
         //Speeds to turn at certain positions
-        public static double turnSpeed = 0.25;
+        public static double turnSpeed = -0.2;
+
+        public static double turnTimeLeft = 1d;
+        public static double turnTimeCenter = 0d;
+        public static double turnTimeRight = 0.6d;
 
         //Auto turn tolerance
-        public static double turnTolerance = 0.5;
+        public static final double turnTolerance = 1;
 
         //Start poses relative to origin for auto as [x, y, angle]
-        public static double[] blueLeft = {3.663, 1, 315};
-        public static double[] blueCenter = {0, 1.25, 0};//{2.663, 1.25, 0};
-        public static double[] blueRight = {1.663, 1, 45};
-        public static double[] redLeft = {3.663, 15.541, 135};
-        public static double[] redCenter = {2.663, 15.291, 180};
-        public static double[] redRight = {1.663, 15.541, 225};
+        public static double[] blueLeft = {4.111, 1.26, 311.028};
+        public static double[] blueCenter = {2.663, 1.239/*1.339 */, 360};//{2.663, 1.25, 0};
+        public static double[] blueRight = {1.215, 1.26, 48.9713};
+        public static double[] redLeft = {4.111, 15.281, 131.0288};
+        public static double[] redCenter = {2.663, 15.202, 180};
+        public static double[] redRight = {1.215, 15.281, 228.9713};
+
+        //Blue bottom right is one, down up right left ordering
+        public static double[][] notePositions = {{1.215, 2.5, 360}, 
+            {2.663, 2.5, 360}, 
+            {4.111, 2.5, 360}, 
+            {0.759, 8.2255, 360}, 
+            {2.435, 8.2255, 360}, 
+            {4.111, 8.2255, 360}, 
+            {5.787, 8.2255, 360}, 
+            {7.463, 8.2255, 360}, 
+            {4.111, 14.041, 180}, 
+            {2.663, 14.041, 180}, 
+            {1.215, 14.041, 180}};
 
     }
 
@@ -80,7 +113,7 @@ public final class Constants {
             public static final double degreesPerRotation = 360 * radsPerRotation / (2 * Math.PI);
 
             //IDs of turn motors
-            public static final int leftUpID = 1;
+            public static final int leftUpID = 17;
             public static final int leftDownID = 7;
             public static final int rightUpID = 3;
             public static final int rightDownID = 5;
@@ -257,6 +290,7 @@ public final class Constants {
         public static final double trapX1 = 4.093;
         public static final double trapX2 = 3.740;
         public static final double trapX3 = 4.445;
+        public static final double rapidX = 1.235;
 
         public static final double minAmpAngle = 0.0;
         public static final double maxAmpAngle = 360.0;
@@ -267,6 +301,7 @@ public final class Constants {
             public static final double trapY1 = 5.275;
             public static final double trapY2 = 4.664;
             public static final double trapY3 = 4.664;
+            public static final double rapidY = 5.873;
 
             public static final double minSpeakerAngle = 0.0;
             public static final double maxSpeakerAngle = 360.0;
@@ -276,6 +311,8 @@ public final class Constants {
             public static final double maxTrap2Angle = 360.0;
             public static final double minTrap3Angle = 0.0;
             public static final double maxTrap3Angle = 360.0;
+            public static final double minRapidAngle = 0.0;
+            public static final double maxRapidAngle = 360.0;
         }
         public static final class redConstants {
             public static final double speakerY = 16.541;
@@ -283,6 +320,7 @@ public final class Constants {
             public static final double trapY1 = 11.266;
             public static final double trapY2 = 11.877;
             public static final double trapY3 = 11.877;
+            public static final double rapidY = 10.719;
 
             public static final double minSpeakerAngle = 0.0;
             public static final double maxSpeakerAngle = 360.0;
@@ -292,6 +330,8 @@ public final class Constants {
             public static final double maxTrap2Angle = 360.0;
             public static final double minTrap3Angle = 0.0;
             public static final double maxTrap3Angle = 360.0;
+            public static final double minRapidAngle = 0.0;
+            public static final double maxRapidAngle = 360.0;
         }
     }
 }
