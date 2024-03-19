@@ -62,6 +62,11 @@ public class HookMaster {
         rightCustomSpark.RPMSet(targetRPM);
     }
 
+    public void combinedRPMSet(double[] targetRPMs) {
+        leftCustomSpark.RPMSet(targetRPMs[0]);
+        rightCustomSpark.RPMSet(targetRPMs[1]);
+    }
+
     public void stop() {
         leftCustomSpark.stopMotor();
         rightCustomSpark.stopMotor();
@@ -77,9 +82,9 @@ public class HookMaster {
 
     public void teleopUpdate() {
         if(Determinables.Controllers.driveController.getPOV() == 0) {
-            combinedLimitedSet(Constants.Presets.Hooks.extending);
+            combinedRPMSet(Constants.Presets.Hooks.extending * Constants.maxRPMs.hook);
         } else if(Determinables.Controllers.driveController.getPOV() == 180) {
-            combinedLimitedSet(Constants.Presets.Hooks.retracting);
+            combinedRPMSet(Constants.Presets.Hooks.retracting * Constants.maxRPMs.hook);
         } else {
             stop();
         }

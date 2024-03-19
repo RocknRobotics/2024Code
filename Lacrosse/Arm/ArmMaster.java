@@ -55,12 +55,6 @@ public class ArmMaster {
         launcherSetsSubscriber = inst.getDoubleArrayTopic("jetson/ArmMaster/launcherSets").subscribe(new double[]{0d, 0d});
     }
 
-    public void intake() {
-        myIntake.combinedLimitedSet(Constants.Presets.Intake.intaking);
-        myMiddle.combinedLimitedSet(Constants.Presets.Middle.intaking);
-        myLauncher.combinedLimitedSet(Constants.Presets.Launcher.intaking);
-    }
-
     public void stop() {
         myArmAngler.stop();
         myIntake.stop();
@@ -79,23 +73,17 @@ public class ArmMaster {
 
         myArmAngler.angleSet(angleInput);
 
-        myLauncher.combinedLimitedSet(launcherInput);
+        myLauncher.combinedRPMSet(launcherInput * Constants.maxRPMs.launcher);
 
         if(Determinables.Controllers.armController.getPOV() == 0) {
-            myMiddle.combinedLimitedSet(launcherInput);
+            myMiddle.combinedRPMSet(launcherInput * Constants.maxRPMs.middle);
         } else if(Determinables.Controllers.armController.getPOV() == 180) {
             myIntake.combinedLimitedSet(Constants.Presets.Intake.intaking);
-
-            if(launcherInput > 0d) {
-                myMiddle.combinedLimitedSet(launcherInput);
-            } else {
-                myMiddle.backCustomSpark.limitedSet(launcherInput);
-                myMiddle.frontCustomSpark.limitedSet(-launcherInput);
-            }
+            myMiddle.combinedRPMSet(Math.abs(launcherInput) * Constants.maxRPMs.middle);
         } else if(Determinables.Controllers.armController.getPOV() == 270) {
             myIntake.combinedLimitedSet(Constants.Presets.Intake.outtaking);
-            myMiddle.combinedLimitedSet(Constants.Presets.Middle.outtaking);
-            myLauncher.combinedLimitedSet(Constants.Presets.Launcher.outtaking);
+            myMiddle.combinedRPMSet(Constants.Presets.Middle.outtaking * Constants.maxRPMs.middle);
+            myLauncher.combinedRPMSet(Constants.Presets.Launcher.outtaking * Constants.maxRPMs.launcher);
         } else {
             myIntake.stop();
             myMiddle.stop();

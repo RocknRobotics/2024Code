@@ -32,6 +32,11 @@ public class Middle {
         frontCustomSpark.RPMSet(middleRPM);
     }
 
+    public void combinedRPMSet(double[] middleRPMs) {
+        backCustomSpark.RPMSet(middleRPMs[0]);
+        frontCustomSpark.RPMSet(middleRPMs[1]);
+    }
+
     public void stop() {
         backCustomSpark.stopMotor();
         frontCustomSpark.stopMotor();

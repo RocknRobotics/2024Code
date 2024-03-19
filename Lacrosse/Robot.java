@@ -50,7 +50,7 @@ public class Robot extends TimedRobot {
     swerveTranslationalFactor = 0.75;
     swerveTranslationalFactor = 0.75;
     armAngleFactor = 0.75;
-    armFireFactor = 0.35;
+    armFireFactor = 0.4;
   }
 
   //20 ms

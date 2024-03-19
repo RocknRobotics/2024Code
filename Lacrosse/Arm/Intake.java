@@ -38,6 +38,12 @@ public class Intake {
         topCustomSpark.RPMSet(intakeRPM);
     }
 
+    public void combinedRPMSet(double[] intakeRPMs) {
+        groundCustomSpark.RPMSet(intakeRPMs[0]);
+        bottomCustomSpark.RPMSet(intakeRPMs[1]);
+        topCustomSpark.RPMSet(intakeRPMs[2]);
+    }
+
     public void stop() {
         groundCustomSpark.stopMotor();
         bottomCustomSpark.stopMotor();

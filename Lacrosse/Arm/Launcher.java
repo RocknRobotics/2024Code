@@ -32,6 +32,11 @@ public class Launcher {
         frontCustomSpark.RPMSet(launcherRPM);
     }
 
+    public void combinedRPMSet(double[] launcherRPMs) {
+        backCustomSpark.RPMSet(launcherRPMs[0]);
+        frontCustomSpark.RPMSet(launcherRPMs[1]);
+    }
+
     public void stop() {
         backCustomSpark.stopMotor();
         frontCustomSpark.stopMotor();
