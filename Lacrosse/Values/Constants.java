@@ -1,7 +1,8 @@
 package frc.robot.Values;
 
 public final class Constants {
-    public static final double armAngleSoftLimit = 100d;
+    public static final double armAngleSoftLimit = 97.5d;
+    public static final double armAngleHardLimit = 100.7d;
     public static final double armAngleRange = 75d;
 
 
@@ -137,14 +138,14 @@ public final class Constants {
         //Intake Motors
         public static final boolean groundRoller = false;
         public static final boolean bottomIntake = false;
-        public static final boolean topIntake = true;
+        public static final boolean topIntake = false;
 
         //Middle Motors
         public static final boolean backMiddleRoller = false;
-        public static final boolean frontMiddleRoller = false;
+        public static final boolean frontMiddleRoller = true;
 
         //Launcher Motors
-        public static final boolean backLauncher = true;
+        public static final boolean backLauncher = false;
         public static final boolean frontLauncher = true;
 
         //Arm Angle Motor
@@ -170,7 +171,7 @@ public final class Constants {
         public static final double rightDownOffset = 276.6;
 
         //Arm Angle Encoder Offset
-        public static final double armAngleOffset = 202.2;
+        public static final double armAngleOffset = 204.2;
     }
 
     //-----------------------------------------------------------------------------------------------------------------------------------
