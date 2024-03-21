@@ -10,11 +10,15 @@ public final class Constants {
         public static final class Intake {
             public static final double intaking = 0.4d;
             public static final double outtaking = -intaking;
+            public static final double sourceTop = 0.4;
+            public static final double sourceBack = 0.4;
+            public static final double sourceGround = 0.4;
         }
 
         public static final class Middle {
             public static final double intaking = 0.15d;
             public static final double outtaking = -intaking;
+            public static final double sourceMiddle = -0.3;
         }
 
         public static final class Launcher {
