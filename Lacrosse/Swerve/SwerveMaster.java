@@ -1,146 +1,291 @@
 package frc.robot.Swerve;
 
-import com.revrobotics.RelativeEncoder;
+import com.ctre.phoenix6.hardware.Pigeon2;
 
-import edu.wpi.first.wpilibj.AnalogEncoder;
-import frc.robot.Children.CustomSpark;
+import edu.wpi.first.math.controller.PIDController;
+import edu.wpi.first.networktables.DoubleArrayPublisher;
+import edu.wpi.first.networktables.DoubleArraySubscriber;
+import edu.wpi.first.networktables.NetworkTableInstance;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import frc.robot.Robot;
 import frc.robot.Values.Constants;
+import frc.robot.Values.Determinables;
 
-public class SwerveModule {
-    public CustomSpark driveCustomSpark;
-    public CustomSpark turnCustomSpark;
+public class SwerveMaster {
+    public SwerveModule[] mySwerveModules;
+    public Pigeon2 myPigeon;
+    public double pigeonHeadingOffset;
 
-    public RelativeEncoder driveRelativeEncoder;
-    public RelativeEncoder turnRelativeEncoder;
+    public PIDController continousController;
 
-    public AnalogEncoder absoluteEncoder;
-    public double absoluteEncoderOffset;
-    public int absoluteEncoderInvert;
+    //X, Y, and Heading of the robot
+    public double[] XYH;
 
-    public double previousTime;
-    public double[] currentModulePosition;
+    //X, Y, and heading change using wheels and pigeon
+    public DoubleArrayPublisher rioXYHPublisher;
+    //Current values returned by the get of each wheel
+    public DoubleArrayPublisher motorDriveGetsPublisher;
+    public DoubleArrayPublisher motorTurnGetsPublisher;
+    //Above but for RPM
+    public DoubleArrayPublisher motorDriveRPMsPublisher;
+    public DoubleArrayPublisher motorTurnRPMsPublisher;
+    //The absolute position of each module
+    public DoubleArrayPublisher moduleAbsoluteAnglesPublisher;
 
-    public double previousDrivePosition;
+    //Gets the sets of the motors as prescribed by the jetson (the jetson accounts for the rpm formula)
+    public DoubleArraySubscriber motorDriveSetsSubscriber;
+    public DoubleArraySubscriber motorTurnSetsSubscriber;
+    //The x, y, and heading of the robot as calculated by the jetson (in case it's needed for wheel stuff)
+    public DoubleArraySubscriber jetsonXYHSubscriber;
 
-    public SwerveModule(int driveID, int turnID, int encoderID, 
-        boolean driveInverted, boolean turnInverted, boolean absoluteEncoderInverted, 
-        double encoderOffset) {
-        driveCustomSpark = new CustomSpark(driveID, Constants.maxSparkChanges.drive, Constants.maxRPMs.drive, driveInverted, driveRelativeEncoder);
-        turnCustomSpark = new CustomSpark(turnID, Constants.maxSparkChanges.turn, Constants.maxRPMs.turn, turnInverted, turnRelativeEncoder);
-        absoluteEncoder = new AnalogEncoder(encoderID);
+    public SwerveMaster(NetworkTableInstance inst) {
+        mySwerveModules = new SwerveModule[4];
+        mySwerveModules[0] = new SwerveModule(Constants.IDs.leftUpDrive, Constants.IDs.leftUpTurn, Constants.IDs.leftUpEncoder, 
+            Constants.Inversions.leftUpDrive, Constants.Inversions.leftUpTurn, Constants.Inversions.leftUpEncoder, 
+            Constants.Offsets.leftUpOffset);
+        mySwerveModules[1] = new SwerveModule(Constants.IDs.leftDownDrive, Constants.IDs.leftDownTurn, Constants.IDs.leftDownEncoder, 
+            Constants.Inversions.leftDownDrive, Constants.Inversions.leftDownTurn, Constants.Inversions.leftDownEncoder, 
+            Constants.Offsets.leftDownOffset);
+        mySwerveModules[2] = new SwerveModule(Constants.IDs.rightUpDrive, Constants.IDs.rightUpTurn, Constants.IDs.rightUpEncoder, 
+            Constants.Inversions.rightUpDrive, Constants.Inversions.rightUpTurn, Constants.Inversions.rightUpEncoder, 
+            Constants.Offsets.rightUpOffset);
+        mySwerveModules[3] = new SwerveModule(Constants.IDs.rightDownDrive, Constants.IDs.rightDownTurn, Constants.IDs.rightDownEncoder, 
+            Constants.Inversions.rightDownDrive, Constants.Inversions.rightDownTurn, Constants.Inversions.rightDownEncoder, 
+            Constants.Offsets.rightDownOffset);
 
-        absoluteEncoderInvert = absoluteEncoderInverted ? -1 : 1;
+        myPigeon = new Pigeon2(Constants.IDs.pigeon2, "rio");
+        myPigeon.optimizeBusUtilization();
+        myPigeon.setYaw(0d);
+        myPigeon.getYaw().setUpdateFrequency(50);
 
-        absoluteEncoderOffset = encoderOffset;
+        pigeonHeadingOffset = 0d;
 
-        previousTime = System.currentTimeMillis();
-        currentModulePosition = new double[2];
+        continousController = new PIDController(1d, 0d, 0d);
+        continousController.enableContinuousInput(0d, 360d);
 
-        previousDrivePosition = driveRelativeEncoder.getPosition() * Constants.Conversions.driveMetresPerRotation;
+        XYH = new double[]{0d, 0d, 0d};
+
+        rioXYHPublisher = inst.getDoubleArrayTopic("rio/SwerveMaster/rioXYH").publish();
+        motorDriveGetsPublisher = inst.getDoubleArrayTopic("rio/SwerveMaster/motorDriveGets").publish();
+        motorTurnGetsPublisher = inst.getDoubleArrayTopic("rio/SwerveMaster/motorTurnGets").publish();
+        motorDriveRPMsPublisher = inst.getDoubleArrayTopic("rio/SwerveMaster/motorDriveRPMs").publish();
+        motorTurnRPMsPublisher = inst.getDoubleArrayTopic("rio/SwerveMaster/motorTurnRPMs").publish();
+        moduleAbsoluteAnglesPublisher = inst.getDoubleArrayTopic("rio/SwerveMaster/moduleAbsoluteAngles").publish();
+
+        motorDriveSetsSubscriber = inst.getDoubleArrayTopic("jetson/SwerveMaster/motorDriveSets").subscribe(new double[]{0d, 0d, 0d, 0d});
+        motorTurnSetsSubscriber = inst.getDoubleArrayTopic("jetson/SwerveMaster/motorTurnSets").subscribe(new double[]{0d, 0d, 0d, 0d});
+        jetsonXYHSubscriber = inst.getDoubleArrayTopic("jetson/XYH").subscribe(new double[]{0d, 0d, 0d});
     }
 
-    public void combinedLimitedSet(double driveSet, double turnSet) {
-        driveCustomSpark.limitedSet(driveSet);
-        turnCustomSpark.limitedSet(turnSet);
-    }
+    public double getHeading() {
+        double temp = -myPigeon.getAngle() - pigeonHeadingOffset;
 
-    public void combinedRPMSet(double driveRPM, double turnRPM) {
-        driveCustomSpark.RPMSet(driveRPM);
-        turnCustomSpark.RPMSet(turnRPM);
-    }
-
-    public void stop() {
-        driveCustomSpark.stopMotor();
-        turnCustomSpark.stopMotor();
-    }
-    
-    public double getAbsoluteModuleAngle() {
-        double temp = -(180 + absoluteEncoderInvert * (absoluteEncoder.getAbsolutePosition()) * Constants.Conversions.turnEncoderDegreesPerRotation + absoluteEncoderOffset);
-
-        while(temp <= 0) {
-            temp += 360;
+        while(temp <= 0d) {
+            temp += 360d;
         }
-        while(temp > 360) {
-            temp -= 360;
+        while(temp > 360d) {
+            temp -= 360d;
         }
 
         return temp;
     }
 
-    public double getWheelMetresPosition() {
-        return driveRelativeEncoder.getPosition() * Constants.Conversions.driveMetresPerRotation;
-    }
+    public double getHeadingNoOffset() {
+        double temp = -myPigeon.getAngle() - pigeonHeadingOffset;
 
-    public double getWheelMetresVelocity() {
-        return driveRelativeEncoder.getVelocity() * Constants.Conversions.driveMetresPerRotation / 60d;
-    }
-
-    public void resetModulePosition(double[] xy) {
-        currentModulePosition[0] = xy[0];
-        currentModulePosition[1] = xy[1];
-    }
-
-    public double[] getModulePosition() {
-        return currentModulePosition;
-    }
-
-    //Get field position of the motor relative to the start origin
-    public double[] calculatePosition(double reducedAngle) {
-        //Get the field relative angle that the wheel is pointing
-        double moveAngle = getAbsoluteModuleAngle() - reducedAngle;
-        while (moveAngle < 0) {
-            moveAngle += 360;
+        while(temp <= 0d) {
+            temp += 360d;
+        }
+        while(temp > 360d) {
+            temp -= 360d;
         }
 
-        //Get how far the wheel moved in that direction
-        //Velocity is reversed to make x positive going right and y positive going forward
-        double currTime = System.currentTimeMillis();
-        double moveLength = -getWheelMetresVelocity() * ((currTime - previousTime) / 1000d);
-        previousTime = currTime;
-
-        //Calculate how x and y are related using the angle
-        double factorY = Math.cos(moveAngle * Math.PI / 180);
-        double factorX = Math.sin(moveAngle * Math.PI / 180);
-
-        //Multiply factors by distance travelled to get x and y changes.
-        double deltaY = factorY * moveLength;
-        double deltaX = factorX * moveLength;
-
-        //Update currX and currY
-        currentModulePosition[0] += deltaX;
-        currentModulePosition[1] += deltaY;
-
-        //Return position
-        return currentModulePosition;
+        return temp;
     }
 
-    //Realign the position of the wheels after figuring out the position of the center
-    public void alignPosition(double[] center, double reducedAngle, double[] initial) {
-        //Find out angle and distance from origin of initial
-        //Polar coordinates
-        double distance = Math.sqrt(Math.pow(initial[0], 2) + Math.pow(initial[1], 2));
-        double angle = Math.atan2(initial[0], initial[1]) + Math.PI * 2 - Math.PI / 2;
+    public void resetHeading(double newHeading) {
+        myPigeon.setYaw(newHeading);
+        /*pigeonHeadingOffset = getHeadingNoOffset() - newHeading;
 
-        //Convert to degrees
-        angle *= 180 / Math.PI;
+        while(pigeonHeadingOffset <= 0d) {
+            pigeonHeadingOffset += 360d;
+        }
+        while(pigeonHeadingOffset > 360d) {
+            pigeonHeadingOffset -= 360d;
+        }*/
+    }
 
-        //Adjust angle 
-        angle += reducedAngle;
+    public void combinedLimitedSet(double[] driveSets, double[] turnSets) {
+        for(int i = 0; i < 4; i++) {
+            mySwerveModules[i].combinedLimitedSet(driveSets[i], turnSets[i]);
+        }
+    }
 
-        //Check for wrapping
-        while (angle >= 360) {
-            angle -= 360;
+    public void combinedRPMSet(double[] driveRPM, double[] turnRPM) {
+        for(int i = 0; i < 4; i++) {
+            mySwerveModules[i].combinedRPMSet(driveRPM[i], turnRPM[i]);
+        }
+    }
+
+    public void stop() {
+        for(int i = 0; i < 4; i++) {
+            mySwerveModules[i].stop();
+        }
+    }
+
+    public void updateNetwork() {
+        double[] tempXYH = jetsonXYHSubscriber.get();
+        combinedLimitedSet(motorDriveSetsSubscriber.get(), motorTurnSetsSubscriber.get());
+        double[] currXY = getOdometryPosition(XYH[2]);
+
+        rioXYHPublisher.set(new double[]{currXY[0] - XYH[0], currXY[1] - XYH[1], continousController.calculate(XYH[2], getHeading())});
+        motorDriveGetsPublisher.set(new double[]{mySwerveModules[0].driveCustomSpark.get(), mySwerveModules[1].driveCustomSpark.get(), 
+            mySwerveModules[2].driveCustomSpark.get(), mySwerveModules[3].driveCustomSpark.get()});
+        motorDriveRPMsPublisher.set(new double[]{mySwerveModules[0].driveRelativeEncoder.getVelocity(), mySwerveModules[1].driveRelativeEncoder.getVelocity(), 
+            mySwerveModules[2].driveRelativeEncoder.getVelocity(), mySwerveModules[3].driveRelativeEncoder.getVelocity()});
+        motorDriveGetsPublisher.set(new double[]{mySwerveModules[0].turnCustomSpark.get(), mySwerveModules[1].turnCustomSpark.get(), 
+            mySwerveModules[2].turnCustomSpark.get(), mySwerveModules[3].turnCustomSpark.get()});
+        motorDriveRPMsPublisher.set(new double[]{mySwerveModules[0].turnRelativeEncoder.getVelocity(), mySwerveModules[1].turnRelativeEncoder.getVelocity(), 
+            mySwerveModules[2].turnRelativeEncoder.getVelocity(), mySwerveModules[3].turnRelativeEncoder.getVelocity()});
+        moduleAbsoluteAnglesPublisher.set(new double[]{mySwerveModules[0].getAbsoluteModuleAngle(), mySwerveModules[1].getAbsoluteModuleAngle(), 
+            mySwerveModules[2].getAbsoluteModuleAngle(), mySwerveModules[3].getAbsoluteModuleAngle()});
+
+        XYH[0] = tempXYH[0];
+        XYH[1] = tempXYH[1];
+        XYH[2] = tempXYH[2];
+        alignModules();
+        resetHeading(XYH[2]);
+    }
+
+    //Should return the change in x, y, since the last time period as calculated via wheel odometry
+    public double[] getOdometryPosition(double heading) {
+        double[] output = new double[2];
+
+        double[][] positions = new double[4][2];
+
+        for(int i = 0; i < 4; i++) {
+            positions[i] = mySwerveModules[i].calculatePosition(heading);
+            output[0] += positions[i][0] / 4d;
+            output[1] += positions[i][1] / 4d;
         }
 
-        //Reconvert back to radians
-        angle *= Math.PI / 180;
+        return output;
+    }
 
-        //Reconvert back to cartesian coordinates
-        double adjustedX = -Math.sin(angle) * distance;
-        double adjustedY = Math.sin(angle) * distance;
+    public void alignModules() {
+        mySwerveModules[0].alignPosition(XYH, XYH[2], Constants.Measurements.leftUpModulePos);
+        mySwerveModules[1].alignPosition(XYH, XYH[2], Constants.Measurements.leftDownModulePos);
+        mySwerveModules[2].alignPosition(XYH, XYH[2], Constants.Measurements.rightUpModulePos);
+        mySwerveModules[3].alignPosition(XYH, XYH[2], Constants.Measurements.rightDownModulePos);
+    }
 
-        //Add robot values and set the new positions
-        currentModulePosition[0] = center[0] + adjustedX;
-        currentModulePosition[1] = center[1] + adjustedY;
+    public void teleopUpdate() {
+        if(Determinables.Controllers.driveController.getL1Button()) {
+            Robot.swerveTranslationalFactor = Math.max(0.05d, Robot.swerveTranslationalFactor - 0.005d);
+        } else if(Determinables.Controllers.driveController.getL2Button()) {
+            Robot.swerveTranslationalFactor = Math.min(1d, Robot.swerveTranslationalFactor + 0.005d);
+        }
+
+        if(Determinables.Controllers.driveController.getR1Button()) {
+            Robot.swerveRotationalFactor = Math.max(0.05d, Robot.swerveRotationalFactor - 0.005d);
+        } else if(Determinables.Controllers.driveController.getR2Button()) {
+            Robot.swerveRotationalFactor = Math.min(1d, Robot.swerveRotationalFactor + 0.005d);
+        }
+
+        if(Determinables.Controllers.driveController.getShareButtonPressed()) {
+            resetHeading(180d);
+        }
+
+        SmartDashboard.putNumber("Translational Factor: ", Robot.swerveTranslationalFactor);
+        SmartDashboard.putNumber("Rotational Factor: ", Robot.swerveRotationalFactor);
+
+        double currentHeading = getHeading();
+        double[] currentPosition = getOdometryPosition(currentHeading);
+        XYH[0] = currentPosition[0];
+        XYH[1] = currentPosition[1];
+        XYH[2] = currentHeading;
+        alignModules();
+
+        SmartDashboard.putNumber("Current Heading: ", XYH[2]);
+
+        double inputX = Math.abs(Determinables.Controllers.driveController.getLeftX()) < Constants.Controllers.driveControllerDeadband 
+            ? 0d 
+            : Determinables.Controllers.driveController.getLeftX() * Robot.swerveTranslationalFactor;
+        double inputY = Math.abs(Determinables.Controllers.driveController.getLeftY()) < Constants.Controllers.driveControllerDeadband 
+            ? 0d 
+            : Determinables.Controllers.driveController.getLeftY() * Robot.swerveTranslationalFactor;
+        double inputH = Math.abs(Determinables.Controllers.driveController.getRightX()) < Constants.Controllers.driveControllerDeadband 
+            ? 0d 
+            : Determinables.Controllers.driveController.getRightX() * Robot.swerveRotationalFactor;
+
+        double adjustedX = -inputX / (Math.abs(inputY) + Math.abs(inputH) + 1);
+        double adjustedY = inputY / (Math.abs(inputX) + Math.abs(inputH) + 1);
+        double adjustedH = -inputH / (Math.abs(inputX) + Math.abs(inputY) + 1);
+
+        if(adjustedX == 0 && adjustedY == 0 && adjustedH == 0) {
+            stop();
+        }
+
+        double[] angleListOne = new double[]{7 * Math.PI / 4, 5 * Math.PI / 4, Math.PI / 4, 3 * Math.PI / 4};
+        double[] angleListTwo = new double[]{3 * Math.PI / 4, Math.PI / 4, 5 * Math.PI / 4, 7 * Math.PI / 4};
+
+        for(int i = 0; i < 4; i++) {
+            double translationalAngle = Math.atan2(-adjustedY, adjustedX);
+            translationalAngle = translationalAngle + currentHeading * Math.PI / 180;
+
+            while(translationalAngle <= 0) {
+                translationalAngle += 2 * Math.PI;
+            }
+            while(translationalAngle > 2 * Math.PI) {
+                translationalAngle -= 2 * Math.PI;
+            }
+
+            double translationalMagnitude = Math.sqrt(Math.pow(adjustedX, 2) + Math.pow(adjustedY, 2));
+
+            double rotationalMagnitude = Math.abs(adjustedH);
+            double rotationalAngle = adjustedH > 0 ? angleListOne[i] : angleListTwo[i];
+
+            while(rotationalAngle <= 0) {
+                rotationalAngle += 2 * Math.PI;
+            }
+            while(rotationalAngle > 2 * Math.PI) {
+                rotationalAngle -= 2 * Math.PI;
+            }
+
+            double tempX = translationalMagnitude * Math.cos(translationalAngle) 
+                + rotationalMagnitude * Math.cos(rotationalAngle);
+            double tempY = translationalMagnitude * Math.sin(translationalAngle) 
+                + rotationalMagnitude * Math.sin(rotationalAngle);
+
+            double desiredAngle = Math.atan2(tempX, tempY) * 180 / Math.PI;
+            double desiredMagnitude = Math.sqrt(Math.pow(tempX, 2) + Math.pow(tempY, 2));
+
+            while(desiredAngle <= 0) {
+                desiredAngle += 360;
+            }
+            while(desiredAngle > 360) {
+                desiredAngle -= 360;
+            }
+
+            double anglePlus = (desiredAngle + 180) > 360 ? desiredAngle : desiredAngle + 180;
+            double angleMinus = (desiredAngle - 180) <= 0 ? desiredAngle : desiredAngle - 180;
+
+            double moduleAbsoluteAngle = mySwerveModules[i].getAbsoluteModuleAngle();
+
+            double desiredTurnSet = continousController.calculate(moduleAbsoluteAngle, desiredAngle) / 90d;
+            double desiredPlusSet = continousController.calculate(moduleAbsoluteAngle, anglePlus) / 90d;
+            double desiredMinusSet = continousController.calculate(moduleAbsoluteAngle, angleMinus) / 90d;
+
+            if(Math.abs(desiredTurnSet) > Math.abs(desiredPlusSet)) {
+                //mySwerveModules[i].combinedRPMSet(-desiredMagnitude * Constants.maxRPMs.drive, desiredPlusSet * Constants.maxRPMs.turn);
+                mySwerveModules[i].combinedLimitedSet(-desiredMagnitude, desiredPlusSet);
+            } else if(Math.abs(desiredTurnSet) > Math.abs(desiredMinusSet)) {
+                //mySwerveModules[i].combinedRPMSet(-desiredMagnitude * Constants.maxRPMs.drive, desiredMinusSet * Constants.maxRPMs.turn);
+                mySwerveModules[i].combinedLimitedSet(-desiredMagnitude, desiredMinusSet);
+            } else {
+                //mySwerveModules[i].combinedRPMSet(desiredMagnitude * Constants.maxRPMs.drive, desiredTurnSet * Constants.maxRPMs.turn);
+                mySwerveModules[i].combinedLimitedSet(desiredMagnitude, desiredTurnSet);
+            }
+        }
     }
 }

@@ -47,10 +47,10 @@ public class Robot extends TimedRobot {
     mySwerveMaster = new SwerveMaster(rioNetworkClient);
     myHookMaster = new HookMaster(rioNetworkClient);
 
-    swerveTranslationalFactor = 0.75;
-    swerveTranslationalFactor = 0.75;
-    armAngleFactor = 0.75;
-    armFireFactor = 0.4;
+    swerveTranslationalFactor = 1d;
+    swerveRotationalFactor = 1d;
+    armAngleFactor = 0.5d;
+    armFireFactor = 0.35d;
   }
 
   //20 ms
@@ -59,7 +59,15 @@ public class Robot extends TimedRobot {
   //-----------------------------------------------------------------------------------------------------------------------------------
   //-----------------------------------------------------------------------------------------------------------------------------------
   @Override
-  public void robotPeriodic() {}
+  public void robotPeriodic() {
+    SmartDashboard.putNumber("LU Angle: ", mySwerveMaster.mySwerveModules[0].getAbsoluteModuleAngle());
+    SmartDashboard.putNumber("LD Angle: ", mySwerveMaster.mySwerveModules[1].getAbsoluteModuleAngle());
+    SmartDashboard.putNumber("RU Angle: ", mySwerveMaster.mySwerveModules[2].getAbsoluteModuleAngle());
+    SmartDashboard.putNumber("RD Angle: ", mySwerveMaster.mySwerveModules[3].getAbsoluteModuleAngle());
+    SmartDashboard.putNumber("Arm Angle: ", myArmMaster.myArmAngler.getAbsoluteAngle());
+    SmartDashboard.putNumber("Pigeon Angle: ", mySwerveMaster.myPigeon.getAngle());
+    //SmartDashboard.putNumber("Pigeon Yaw: ", mySwerveMaster.myPigeon.getYaw().getValueAsDouble());
+  }
 
   //-----------------------------------------------------------------------------------------------------------------------------------
   //-----------------------------------------------------------------------------------------------------------------------------------
@@ -126,7 +134,6 @@ public class Robot extends TimedRobot {
   //-----------------------------------------------------------------------------------------------------------------------------------
   //-----------------------------------------------------------------------------------------------------------------------------------
   //-----------------------------------------------------------------------------------------------------------------------------------
-  @Override
+  @Override///he he haw haw
   public void testPeriodic() {}
-
 }

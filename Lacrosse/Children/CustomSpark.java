@@ -8,21 +8,19 @@ public class CustomSpark extends CANSparkMax {
     public double maxRPM;
     public RelativeEncoder relativeEncoder;
 
-    public CustomSpark(int channel, double maxChange, double maxRPM, boolean inverted, RelativeEncoder relativeEncoder) {
-        this(channel, MotorType.kBrushless, maxChange, maxRPM, inverted, relativeEncoder);
+    public CustomSpark(int channel, double maxChange, double maxRPM, boolean inverted) {
+        this(channel, MotorType.kBrushless, maxChange, maxRPM, inverted);
     }
     
-    public CustomSpark(int channel, MotorType type, double maxChange, double maxRPM, boolean inverted, RelativeEncoder relativeEncoder) {
+    public CustomSpark(int channel, MotorType type, double maxChange, double maxRPM, boolean inverted) {
         super(channel, type);
         this.maxChange = maxChange;
         this.maxRPM = maxRPM;
-        relativeEncoder = getEncoder();
+        relativeEncoder = this.getEncoder();
 
         setInverted(inverted);
         relativeEncoder.setVelocityConversionFactor(1d);
         relativeEncoder.setPositionConversionFactor(1d);
-
-        this.relativeEncoder = relativeEncoder;
     }
 
     public void limitedSet(double value) {

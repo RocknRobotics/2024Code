@@ -13,8 +13,10 @@ public class Middle {
     public RelativeEncoder frontRelativeEncoder;
 
     public Middle() {
-        backCustomSpark = new CustomSpark(Constants.IDs.backMiddleRoller, Constants.maxSparkChanges.middle, Constants.maxRPMs.middle, Constants.Inversions.backMiddleRoller, backRelativeEncoder);
-        frontCustomSpark = new CustomSpark(Constants.IDs.frontMiddleRoller, Constants.maxSparkChanges.middle, Constants.maxRPMs.middle, Constants.Inversions.frontMiddleRoller, frontRelativeEncoder);
+        backCustomSpark = new CustomSpark(Constants.IDs.backMiddleRoller, Constants.maxSparkChanges.middle, Constants.maxRPMs.middle, Constants.Inversions.backMiddleRoller);
+        backRelativeEncoder = backCustomSpark.relativeEncoder;
+        frontCustomSpark = new CustomSpark(Constants.IDs.frontMiddleRoller, Constants.maxSparkChanges.middle, Constants.maxRPMs.middle, Constants.Inversions.frontMiddleRoller);
+        frontRelativeEncoder = frontCustomSpark.relativeEncoder;
     }
 
     public void combinedLimitedSet(double middleSet) {

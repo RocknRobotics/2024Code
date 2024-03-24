@@ -15,9 +15,12 @@ public class Intake {
     public RelativeEncoder topRelativeEncoder;
 
     public Intake() {
-        groundCustomSpark = new CustomSpark(Constants.IDs.groundRoller, Constants.maxSparkChanges.groundRoller, Constants.maxRPMs.groundRoller, Constants.Inversions.groundRoller, groundRelativeEncoder);
-        bottomCustomSpark = new CustomSpark(Constants.IDs.bottomIntake, Constants.maxSparkChanges.bottomIntake, Constants.maxRPMs.bottomIntake, Constants.Inversions.bottomIntake, bottomRelativeEncoder);
-        topCustomSpark = new CustomSpark(Constants.IDs.topIntake, Constants.maxSparkChanges.topIntake, Constants.maxRPMs.topIntake, Constants.Inversions.topIntake, topRelativeEncoder);
+        groundCustomSpark = new CustomSpark(Constants.IDs.groundRoller, Constants.maxSparkChanges.groundRoller, Constants.maxRPMs.groundRoller, Constants.Inversions.groundRoller);
+        groundRelativeEncoder = groundCustomSpark.relativeEncoder;
+        bottomCustomSpark = new CustomSpark(Constants.IDs.bottomIntake, Constants.maxSparkChanges.bottomIntake, Constants.maxRPMs.bottomIntake, Constants.Inversions.bottomIntake);
+        bottomRelativeEncoder = bottomCustomSpark.relativeEncoder;
+        topCustomSpark = new CustomSpark(Constants.IDs.topIntake, Constants.maxSparkChanges.topIntake, Constants.maxRPMs.topIntake, Constants.Inversions.topIntake);
+        topRelativeEncoder = topCustomSpark.relativeEncoder;
     }
 
     public void combinedLimitedSet(double intakeSet) {

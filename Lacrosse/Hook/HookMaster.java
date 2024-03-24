@@ -27,8 +27,10 @@ public class HookMaster {
     public DoubleArraySubscriber hookSetsSubscriber;
 
     public HookMaster(NetworkTableInstance inst) {
-        leftCustomSpark = new CustomSpark(Constants.IDs.leftHook, Constants.maxSparkChanges.hook, Constants.maxRPMs.hook, Constants.Inversions.leftHook, leftRelativeEncoder);
-        rightCustomSpark = new CustomSpark(Constants.IDs.rightHook, Constants.maxSparkChanges.hook, Constants.maxRPMs.hook, Constants.Inversions.rightHook, rightRelativeEncoder);
+        leftCustomSpark = new CustomSpark(Constants.IDs.leftHook, Constants.maxSparkChanges.hook, Constants.maxRPMs.hook, Constants.Inversions.leftHook);
+        leftRelativeEncoder = leftCustomSpark.relativeEncoder;
+        rightCustomSpark = new CustomSpark(Constants.IDs.rightHook, Constants.maxSparkChanges.hook, Constants.maxRPMs.hook, Constants.Inversions.rightHook);
+        rightRelativeEncoder = rightCustomSpark.relativeEncoder;
         leftStartPosition = leftRelativeEncoder.getPosition();
         rightStartPosition = rightRelativeEncoder.getPosition();
 

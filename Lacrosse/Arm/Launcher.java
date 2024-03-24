@@ -13,17 +13,19 @@ public class Launcher {
     public RelativeEncoder frontRelativeEncoder;
 
     public Launcher() {
-        backCustomSpark = new CustomSpark(Constants.IDs.backLauncher, Constants.maxSparkChanges.launcher, Constants.maxRPMs.launcher, Constants.Inversions.backLauncher, backRelativeEncoder);
-        frontCustomSpark = new CustomSpark(Constants.IDs.frontLauncher, Constants.maxSparkChanges.launcher, Constants.maxRPMs.launcher, Constants.Inversions.frontLauncher, frontRelativeEncoder);
+        backCustomSpark = new CustomSpark(Constants.IDs.backLauncher, Constants.maxSparkChanges.launcher, Constants.maxRPMs.launcher, Constants.Inversions.backLauncher);
+        backRelativeEncoder = backCustomSpark.relativeEncoder;
+        frontCustomSpark = new CustomSpark(Constants.IDs.frontLauncher, Constants.maxSparkChanges.launcher, Constants.maxRPMs.launcher, Constants.Inversions.frontLauncher);
+        frontRelativeEncoder = frontCustomSpark.relativeEncoder;
     }
 
     public void combinedLimitedSet(double launcherSet) {
-        backCustomSpark.limitedSet(launcherSet);
+        backCustomSpark.limitedSet(1.25 * launcherSet);
         frontCustomSpark.limitedSet(launcherSet);
     }
 
     public void combinedLimitedSet(double[] launcherSets) {
-        backCustomSpark.limitedSet(launcherSets[0]);
+        backCustomSpark.limitedSet(1.25 * launcherSets[0]);
         frontCustomSpark.limitedSet(launcherSets[1]);
     }
 

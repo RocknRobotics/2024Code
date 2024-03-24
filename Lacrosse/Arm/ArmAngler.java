@@ -18,7 +18,8 @@ public class ArmAngler {
     public double armAngleSoftLimit;
 
     public ArmAngler() {
-        armAngleCustomSpark = new CustomSpark(Constants.IDs.armAngleMotor, Constants.maxSparkChanges.armAngle, Constants.maxRPMs.armAngle, Constants.Inversions.armAngleMotor, armAngleRelativeEncoder);
+        armAngleCustomSpark = new CustomSpark(Constants.IDs.armAngleMotor, Constants.maxSparkChanges.armAngle, Constants.maxRPMs.armAngle, Constants.Inversions.armAngleMotor);
+        armAngleRelativeEncoder = armAngleCustomSpark.relativeEncoder;
         armAngleAbsoluteEncoder = new DutyCycleEncoder(Constants.IDs.armAngleEncoder);
 
         armAngleAbsoluteEncoderInvert = Constants.Inversions.armAngleEncoder ? -1 : 1;

@@ -25,8 +25,10 @@ public class SwerveModule {
     public SwerveModule(int driveID, int turnID, int encoderID, 
         boolean driveInverted, boolean turnInverted, boolean absoluteEncoderInverted, 
         double encoderOffset) {
-        driveCustomSpark = new CustomSpark(driveID, Constants.maxSparkChanges.drive, Constants.maxRPMs.drive, driveInverted, driveRelativeEncoder);
-        turnCustomSpark = new CustomSpark(turnID, Constants.maxSparkChanges.turn, Constants.maxRPMs.turn, turnInverted, turnRelativeEncoder);
+        driveCustomSpark = new CustomSpark(driveID, Constants.maxSparkChanges.drive, Constants.maxRPMs.drive, driveInverted);
+        driveRelativeEncoder = driveCustomSpark.relativeEncoder;
+        turnCustomSpark = new CustomSpark(turnID, Constants.maxSparkChanges.turn, Constants.maxRPMs.turn, turnInverted);
+        turnRelativeEncoder = turnCustomSpark.relativeEncoder;
         absoluteEncoder = new AnalogEncoder(encoderID);
 
         absoluteEncoderInvert = absoluteEncoderInverted ? -1 : 1;
@@ -85,7 +87,7 @@ public class SwerveModule {
     }
 
     //Get field position of the motor relative to the start origin
-    public double[] getPosition(double reducedAngle) {
+    public double[] calculatePosition(double reducedAngle) {
         //Get the field relative angle that the wheel is pointing
         double moveAngle = getAbsoluteModuleAngle() - reducedAngle;
         while (moveAngle < 0) {
@@ -142,29 +144,5 @@ public class SwerveModule {
         //Add robot values and set the new positions
         currentModulePosition[0] = center[0] + adjustedX;
         currentModulePosition[1] = center[1] + adjustedY;
-    }
-
-    //X, Y
-    public double[] changeInPosition() {
-        double currPos = getWheelMetresPosition();
-        double angle = getAbsoluteModuleAngle();
-
-        angle -= 90;
-
-        while(angle < 0) {
-            angle += 360;
-        }
-
-        while(angle >= 360) {
-            angle -= 360;
-        }
-
-        double radius = (currPos - previousDrivePosition) * Constants.Conversions.driveMetresPerRotation;
-
-        double[] output = new double[]{Math.cos(angle * Math.PI / 180) * radius, Math.sin(angle * Math.PI / 180) * radius};
-
-        previousDrivePosition = currPos;
-
-        return output;
     }
 }

@@ -10,7 +10,7 @@ public final class Constants {
         public static final class Intake {
             public static final double intaking = 0.4d;
             public static final double outtaking = -intaking;
-            public static final double sourceTop = 0.4;
+            public static final double sourceTop = -0.4;
             public static final double sourceBack = 0.4;
             public static final double sourceGround = 0.4;
         }
@@ -18,7 +18,7 @@ public final class Constants {
         public static final class Middle {
             public static final double intaking = 0.15d;
             public static final double outtaking = -intaking;
-            public static final double sourceMiddle = -0.3;
+            public static final double sourceIntake = -0.3;
         }
 
         public static final class Launcher {
@@ -27,7 +27,7 @@ public final class Constants {
 
             public static final double ampLaunch = 0.11;
             public static final double sourceIntake = -0.3;
-            public static final double rapidLaunch = 0.64;
+            public static final double rapidLaunch = 0.35;//0.64;
         }
 
         public static final class Hooks {
@@ -36,9 +36,9 @@ public final class Constants {
         }
 
         public static final class ArmAngler {
-            public static final double ampAngle = 65.4;
-            public static final double sourceAngle = 73.1;
-            public static final double rapidAngle = 65.8;
+            public static final double ampAngle = 65.0;
+            public static final double sourceAngle = 66.0;//73.1;
+            public static final double rapidAngle = 60.0;//65.4;
         }
     }
 
@@ -129,16 +129,16 @@ public final class Constants {
     //-----------------------------------------------------------------------------------------------------------------------------------
     public static final class Inversions {
         //Drive Motors
-        public static final boolean leftUpDrive = false;
-        public static final boolean leftDownDrive = false;
-        public static final boolean rightUpDrive = false;
-        public static final boolean rightDownDrive = false;
+        public static final boolean leftUpDrive = true;
+        public static final boolean leftDownDrive = true;
+        public static final boolean rightUpDrive = true;
+        public static final boolean rightDownDrive = true;
 
         //Turn Motors
-        public static final boolean leftUpTurn = false;
-        public static final boolean leftDownTurn = false;
-        public static final boolean rightUpTurn = false;
-        public static final boolean rightDownTurn = false;
+        public static final boolean leftUpTurn = true;
+        public static final boolean leftDownTurn = true;
+        public static final boolean rightUpTurn = true;
+        public static final boolean rightDownTurn = true;
 
         //Turn Encoders
         public static final boolean leftUpEncoder = true;
@@ -159,8 +159,8 @@ public final class Constants {
         public static final boolean frontMiddleRoller = true;
 
         //Launcher Motors
-        public static final boolean backLauncher = false;
-        public static final boolean frontLauncher = true;
+        public static final boolean backLauncher = true;
+        public static final boolean frontLauncher = false;
 
         //Arm Angle Motor
         public static final boolean armAngleMotor = true;
@@ -196,27 +196,27 @@ public final class Constants {
         //Ranges from 0 to 2 (since 1 - (-1) == 2)
         //Maximum change allowed in one time period between newSet in SparkMax.set(double newSet) and the double returned by SparkMax.get()
         //Drive Motors
-        public static final double drive = 0.2;
+        public static final double drive = 0.25;
 
         //Turn Motors
-        public static final double turn = 0.2;
+        public static final double turn = 0.25;
 
         //Intake Motors
-        public static final double groundRoller = 0.2;
-        public static final double bottomIntake = 0.2;
-        public static final double topIntake = 0.2;
+        public static final double groundRoller = 0.25;
+        public static final double bottomIntake = 0.25;
+        public static final double topIntake = 0.25;
 
         //Middle Motors
-        public static final double middle = 0.2;
+        public static final double middle = 0.25;
 
         //Launcher Motors
-        public static final double launcher = 0.2;
+        public static final double launcher = 0.25;
 
         //Arm Angle Motor
-        public static final double armAngle = 0.2;
+        public static final double armAngle = 0.25;
 
         //Hook Motors
-        public static final double hook = 0.2;
+        public static final double hook = 0.25;
     }
 
     //-----------------------------------------------------------------------------------------------------------------------------------
