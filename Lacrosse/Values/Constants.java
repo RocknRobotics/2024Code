@@ -37,7 +37,7 @@ public final class Constants {
 
         public static final class ArmAngler {
             public static final double ampAngle = 65.0;
-            public static final double sourceAngle = 66.0;//73.1;
+            public static final double sourceAngle = 72.0;//66.0;//73.1;
             public static final double rapidAngle = 60.0;//65.4;
         }
     }
@@ -216,7 +216,7 @@ public final class Constants {
         public static final double armAngle = 0.25;
 
         //Hook Motors
-        public static final double hook = 0.25;
+        public static final double hook = 0.1;
     }
 
     //-----------------------------------------------------------------------------------------------------------------------------------
